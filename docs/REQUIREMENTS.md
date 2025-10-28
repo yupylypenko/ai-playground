@@ -2,7 +2,30 @@
 
 ## Cosmic Flight Simulator - Detailed Requirements
 
-### 1. Core Simulation Features
+## Performance Requirements
+
+### Response Time
+- **Click Response**: All user interactions must respond within 0.1 seconds (100ms)
+- **Frame Rate**: Minimum 30 FPS, target 60 FPS for smooth gameplay
+- **Input Lag**: Input processing must be immediate with no perceptible delay
+
+### Compatibility
+- **Hardware Requirements**: Must run on any standard laptop (no high-end GPU required)
+- **Minimum Specs**:
+  - CPU: Dual-core 1.6 GHz or higher
+  - RAM: 2GB minimum
+  - Graphics: Integrated GPU acceptable (no dedicated GPU required)
+  - Storage: 100MB for installation
+- **Operating Systems**: Windows, macOS, Linux support
+- **No External Dependencies**: Run without internet connection after installation
+
+### Optimization Requirements
+- **Efficient Rendering**: Use level-of-detail (LOD) for distant objects
+- **Low Resource Usage**: CPU usage under 50% on target hardware
+- **Memory Management**: Efficient memory usage, minimal leaks
+- **Scalable Performance**: Adjustable quality settings for various hardware
+
+## 1. Core Simulation Features
 
 #### 1.1 Spacecraft Physics
 - **Orbital Mechanics**: Implement realistic gravity, velocity, and trajectory calculations
