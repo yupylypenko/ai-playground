@@ -1,0 +1,140 @@
+# .cursorrules — Space‑Sim (Cursor IDE)
+
+# Purpose: Guardrails for AI edits in this repo. Keep rules concise, enforceable, and unambiguous.
+
+## 0) Scope & Targets
+
+* Language: **Python 3.11+**
+* Package layout: `src/` with packages **simulator**, **cockpit**, **visualization**
+* Build/format/lint: **Black + Ruff**, type checking **MyPy + Pyright**, tests **pytest**
+* CI: GitHub Actions (`.github/workflows/ci.yml`)
+* Docs live under `docs/` (MkDocs Material style). Do not auto‑rewrite diagrams.
+
+## 1) Repository Map (Authoritative)
+
+* **Domain** → `src/simulator/` (e.g., `physics.py`, `solar_system.py`, `spacecraft.py`)
+
+  * Pure logic only; no IO or rendering; stdlib + safe math libs only.
+* **Application** → `src/cockpit/` (controls orchestration, HUD logic)
+
+  * May depend on **domain**; exposes use‑cases/services/DTOs; no rendering.
+* **Adapters** → `src/visualization/` (renderer, camera, models) and `assets/` (textures, sounds, models)
+
+  * Implements ports; may perform IO and framework calls; no business rules.
+* **Entry point** → `main.py` wires layers together.
+* **Tests** → `tests/` mirrors `src/` structure.
+* **Docs** → `docs/` (architecture, diagrams, setup, requirements).
+
+## 2) Layering Rules (Hard Requirements)
+
+* Allowed imports: `visualization → cockpit → simulator` (one‑way inward).
+* **Forbidden**:
+
+  * Any import from `src/simulator/` to `cockpit` or `visualization`.
+  * Business logic inside `visualization`.
+  * Direct import `cockpit → visualization` except at composition/entry points.
+* Cross‑layer calls must go through **ports** (Protocols/ABCs) defined in `cockpit`.
+* Long‑running or IO work only in adapters/entry points, never in domain.
+
+## 3) Editing Rules for Cursor
+
+* Prefer **small, reviewable diffs**, grouped by file, with a one‑paragraph *Why* note.
+* Preserve public APIs unless explicitly allowed to break them.
+* Keep comments/licenses/headers; do not delete author notes.
+* If a task is ambiguous, ask **up to 3 focused questions**, then proceed with a safe minimal change.
+* When moving files to respect layers, first create the **port**, then move implementations to adapters; submit as two commits.
+* When generating code, also generate/update matching tests and docs snippets.
+
+## 4) Code Style (Enforced)
+
+* **Black** (line length 88), **Ruff** rules: `E,F,W,I,UP,PL,PT,B,SIM,ISC,PERF,COM,ANN`.
+* Always add `from __future__ import annotations` in new modules.
+* Imports: stdlib → third‑party → first‑party; one blank line between groups.
+* Public functions/classes: complete **type hints** + short **Google‑style docstrings**.
+* No wildcard imports. Prefer early returns, functions ≤ 40 lines (extract helpers if longer).
+* Use `dataclasses` for DTOs; avoid global state; pass settings/clients explicitly.
+* Logging via `logging`; `print` allowed only in CLIs and temporary diagnostics inside tests.
+
+## 5) Testing Policy
+
+* Framework: **pytest** with coverage; markers: `slow`, `integration`.
+* Coverage floors: **80% overall**, **90% for `src/simulator/*`**.
+* Unit tests avoid network/filesystem; use fixtures/factories; deterministic RNG/clock injection.
+
+## 6) Tooling Expectations
+
+* Keep and honor: `pyproject.toml`, `.pre-commit-config.yaml`, `mypy.ini`, `pyrightconfig.json`, `.editorconfig`, `pytest.ini`, `.vscode/settings.json`, `.gitignore`, `.github/workflows/ci.yml`.
+* Auto‑fix lint/format on save; organize imports with Ruff.
+* CI must run: ruff, black --check, mypy, pyright, pytest, safety/pip‑audit.
+
+## 7) Security & Privacy
+
+* No secrets in code, commits, or docs. Use env or secrets manager; provide `.env.example` only.
+* Enable `detect-secrets` pre‑commit; block on findings.
+* Validate/parse external inputs at adapter boundaries; never use `eval/exec`.
+* Redact PII in logs; avoid dumping raw objects containing tokens.
+
+## 8) File/Folder Guardrails
+
+* Do **not** mass‑edit `assets/**` or `docs/images/**` except for explicit renames/additions.
+* Keep `README.md`, `docs/ARCHITECTURE.md`, and `docs/IMPLEMENTATION.md` consistent with code changes; update sections you affect.
+* Diagram scripts: only touch `generate_diagrams.py` / `generate_online_diagrams.py` when requested; never overwrite image outputs without mention in PR text.
+
+## 9) Commit & PR Hygiene
+
+* Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`).
+* PR template: keep `pr-description.md`; include Summary, Motivation, Screenshots/CLI output, Risk, Rollback.
+* Break large refactors into: (1) structure move, (2) behavior change, (3) cleanup.
+
+## 10) Cursor Behaviors (Auto‑responses)
+
+* If a change violates **Layering Rules**, decline and propose a compliant alternative.
+* If requested to import across layers, propose a **port** and show the wiring in `main.py` instead.
+* When adding a feature, also stub: tests in `tests/`, and a short usage note in `README.md`.
+
+## 11) Quick Checklists
+
+**New module**
+
+* [ ] Correct package (`simulator`/`cockpit`/`visualization`)
+* [ ] Types + docstring + logging (if applicable)
+* [ ] Tests + docs snippet
+
+**New dependency**
+
+* [ ] Justified; pinned range
+* [ ] Used only in allowed layers
+* [ ] Added to `requirements.txt` (and lock in CI if used)
+
+**Boundary review**
+
+* [ ] No `simulator` imports from other packages
+* [ ] `cockpit` exposes ports; `visualization` implements them
+* [ ] Entry point wires dependencies explicitly
+
+## 12) Repository‑specific Rules
+
+* Physics/astro logic stays in `src/simulator/` and must remain pure.
+* Rendering (`renderer.py`, `camera.py`, `models.py`) stays in `src/visualization/` and must not mutate domain state.
+* HUD/controls live in `src/cockpit/`; they coordinate but do not perform rendering.
+* `missions/` content and challenge definitions are data; no heavy logic inside.
+
+## 13) Minimal Diff Example (for Cursor)
+
+When asked to “add thruster overheating”:
+
+1. Add domain rule in `src/simulator/spacecraft.py` (pure, tested).
+2. Expose use‑case in `src/cockpit/controls.py` calling domain.
+3. Update `src/visualization/hud.py` to display status via port.
+4. Wire in `main.py`. Add tests (`tests/test_physics.py`, `tests/test_cockpit.py`).
+5. Update `docs/IMPLEMENTATION.md` (short note).
+
+## 14) Ambiguity Handling
+
+* Ask up to **3** targeted questions (inputs, outputs, constraints). If no answer, implement the smallest safe version and leave `TODO(owner):` notes.
+
+## 15) Out of Scope for AI
+
+* License changes, legal text, or altering `LICENSE`.
+* Regenerating large binary assets.
+* Changing CI secrets/config outside documented files.
