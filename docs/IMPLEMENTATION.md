@@ -8,9 +8,15 @@ This document outlines what has been scaffolded and what needs to be implemented
 
 ### ✅ Completed Scaffolding
 
+#### Performance Requirements
+- ✅ **Response Time**: 0.1 seconds per click/interaction
+- ✅ **Compatibility**: Runs on any standard laptop
+- ✅ **Frame Rate**: 30-60 FPS target
+- ✅ **Hardware**: Low resource requirements (integrated GPU acceptable)
+
 #### Documentation Files
 - **README.md**: Overview, features, installation, usage
-- **REQUIREMENTS.md**: Detailed requirements specification
+- **REQUIREMENTS.md**: Detailed requirements specification (now with performance requirements)
 - **ARCHITECTURE.md**: System design and component overview
 - **SETUP.md**: Installation and setup instructions
 - **IMPLEMENTATION.md**: This file
