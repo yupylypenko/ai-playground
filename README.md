@@ -20,6 +20,17 @@ A Python-based cosmic flight simulator that allows you to pilot a spaceship thro
 - **Mouse**: Look around cockpit
 - **Tab**: Switch cockpit views
 
+## ⚡ Performance Requirements
+
+- **Response Time**: 0.1 seconds (100ms) per user interaction
+- **Frame Rate**: 30-60 FPS for smooth gameplay
+- **Compatibility**: Runs on any standard laptop with integrated GPU
+- **Minimum Specs**:
+  - CPU: Dual-core 1.6 GHz+
+  - RAM: 2GB minimum
+  - Graphics: Integrated GPU acceptable (no dedicated GPU needed)
+  - Storage: 100MB installation size
+
 ## 🚀 Getting Started
 
 ### Prerequisites
