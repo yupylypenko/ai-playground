@@ -46,3 +46,7 @@ Thumbs.db
 saves/
 logs/
 *.log
+
+# Generated screenshots (keep docs/images/*.png tracked)
+/smoke_*.png
+/smoke_main_menu.png
