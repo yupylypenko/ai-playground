@@ -72,12 +72,14 @@ ai-playground/
 ├── main.py                 # Entry point
 ├── README.md              # This file
 ├── requirements.txt        # Python dependencies
-├── docs/                   # Documentation
-│   ├── ARCHITECTURE.md    # System architecture
-│   ├── DIAGRAMS.md        # PlantUML diagrams
-│   ├── IMPLEMENTATION.md  # Implementation guide
-│   ├── REQUIREMENTS.md    # Detailed requirements
-│   └── SETUP.md           # Setup instructions
+├── docs/                          # Documentation
+│   ├── ARCHITECTURE.md           # System architecture
+│   ├── DIAGRAMS.md               # PlantUML diagrams
+│   ├── engineeringpractices.md   # Technical standards and practices
+│   ├── IMPLEMENTATION.md         # Implementation guide
+│   ├── REQUIREMENTS.md           # Detailed requirements
+│   ├── SETUP.md                  # Setup instructions
+│   └── userflows.md              # User flows and navigation
 ├── src/
 │   ├── __init__.py
 │   ├── simulator/
@@ -114,9 +116,11 @@ For detailed documentation, see the `docs/` folder:
 
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture and design
 - **[DIAGRAMS.md](docs/DIAGRAMS.md)** - Visual PlantUML diagrams
-- **[REQUIREMENTS.md](docs/REQUIREMENTS.md)** - Detailed requirements specification
+- **[engineeringpractices.md](docs/engineeringpractices.md)** - Technical standards and practices
 - **[IMPLEMENTATION.md](docs/IMPLEMENTATION.md)** - Implementation roadmap
+- **[REQUIREMENTS.md](docs/REQUIREMENTS.md)** - Detailed requirements specification
 - **[SETUP.md](docs/SETUP.md)** - Setup and installation guide
+- **[userflows.md](docs/userflows.md)** - User flows and navigation paths
 
 ## 🎯 Core Requirements
 
