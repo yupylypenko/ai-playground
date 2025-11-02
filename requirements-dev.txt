@@ -29,7 +29,8 @@ isort>=5.13.0
 shellcheck-py>=0.9.0
 
 # Markdown linting
-markdownlint-cli>=0.38.0
+# Note: markdownlint-cli is a Node.js package, installed via pre-commit hook
+# If you need to install manually: npm install -g markdownlint-cli
 
 # YAML linting
 yamllint>=1.33.0
