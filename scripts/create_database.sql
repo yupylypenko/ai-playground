@@ -170,9 +170,9 @@ SELECT 'ACCOUNT_SESSIONS', COUNT(*) FROM ACCOUNT_SESSIONS;
 
 SELECT '' as '';
 SELECT 'Sample accounts:' as '';
-SELECT account_id, username, first_name, last_name, 
+SELECT account_id, username, first_name, last_name,
        CASE WHEN password_salt IS NOT NULL THEN 'Hashed' ELSE 'Plain Text' END as password_type,
-       status_id 
+       status_id
 FROM ACCOUNTS;
 
 -- ============================================================================

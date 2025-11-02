@@ -9,15 +9,15 @@ The Cosmic Flight Simulator is built with a modular architecture to separate con
 
 Diagrams can be viewed in the following ways:
 
-**Option 1: View embedded PNG images below**  
+**Option 1: View embedded PNG images below**
 This document includes embedded diagram images in the "Visual Architecture Diagrams" section.
 
-**Option 2: View online using PlantUML renderer**  
+**Option 2: View online using PlantUML renderer**
 1. Go to https://www.plantuml.com/plantuml/uml/
 2. Copy the PlantUML code from [DIAGRAMS.md](DIAGRAMS.md)
 3. Paste and view the rendered diagram
 
-**Option 3: Local rendering with PlantUML**  
+**Option 3: Local rendering with PlantUML**
 See [DIAGRAMS.md](DIAGRAMS.md) for instructions on rendering locally.
 
 > **📊 Source Code**: All PlantUML diagram source code is available in [DIAGRAMS.md](DIAGRAMS.md)

@@ -6,7 +6,7 @@ Welcome to the Cosmic Flight Simulator documentation! This folder contains all p
 
 ### System Documentation
 
-1. **[REQUIREMENTS.md](REQUIREMENTS.md)** 
+1. **[REQUIREMENTS.md](REQUIREMENTS.md)**
    - Detailed requirements specification
    - Core features and capabilities
    - Implementation phases

@@ -1,0 +1,39 @@
+# Development dependencies for CI/CD pipeline
+
+
+# Security
+bandit>=1.7.0
+
+# Code formatting
+black>=23.0.0
+
+# Coverage reporting
+coverage>=7.0.0
+flake8>=6.1.0
+
+# Import sorting
+isort>=5.13.0
+
+# Type checking
+mypy>=1.0.0
+
+# Pre-commit hooks
+pre-commit>=3.5.0
+pyright>=1.1.0
+# Testing
+pytest>=6.2.0
+pytest-cov>=2.12.0
+pytest-xdist>=2.5.0
+
+# Linting
+ruff>=0.1.0
+
+# Shell linting
+shellcheck-py>=0.9.0
+
+# Markdown linting
+# Note: markdownlint-cli is a Node.js package, installed via pre-commit hook
+# If you need to install manually: npm install -g markdownlint-cli
+
+# YAML linting
+yamllint>=1.33.0

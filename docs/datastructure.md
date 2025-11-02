@@ -69,12 +69,12 @@ from .physics import Vector3D
 @dataclass
 class Spacecraft:
     """Spacecraft with physical properties and operational state."""
-    
+
     # Identity
     id: str
     name: str
     ship_type: str  # "scout", "freighter", "fighter"
-    
+
     # Mass & Propulsion
     mass: float  # kg
     dry_mass: float  # kg
@@ -83,14 +83,14 @@ class Spacecraft:
     max_thrust: float  # N
     specific_impulse: float  # seconds
     cruise_speed: float  # m/s
-    
+
     # Position & Orientation
     position: Vector3D
     velocity: Vector3D
     acceleration: Vector3D
     orientation: Quaternion
     angular_velocity: Vector3D
-    
+
     # Operational State
     thrust_level: float  # 0.0-1.0
     thrust_vector: Vector3D
@@ -98,17 +98,17 @@ class Spacecraft:
     boost_active: bool
     shields_active: bool
     hull_integrity: float  # 0.0-1.0
-    
+
     # Life Support
     oxygen_level: float  # 0-100%
     cabin_pressure: float  # kPa
     cabin_temp: float  # Celsius
     life_support_status: str
-    
+
     def get_mass(self) -> float:
         """Calculate total mass including fuel."""
         return self.dry_mass + (self.current_fuel * 0.75)  # 0.75 kg/L
-    
+
     def get_fuel_percent(self) -> float:
         """Get fuel as percentage."""
         return (self.current_fuel / self.max_fuel_capacity) * 100.0
@@ -157,12 +157,12 @@ from .physics import Vector3D
 @dataclass
 class CelestialBody:
     """Planetary body with physical and orbital properties."""
-    
+
     # Identity
     id: str
     name: str
     type: str  # "star", "planet", "moon", "asteroid"
-    
+
     # Physical Properties
     mass: float  # kg
     radius: float  # meters
@@ -171,7 +171,7 @@ class CelestialBody:
     temperature: float  # Kelvin
     has_atmosphere: bool
     has_water: bool
-    
+
     # Orbital Mechanics
     parent_id: Optional[str]  # None for Sun
     semi_major_axis: float  # meters
@@ -182,12 +182,12 @@ class CelestialBody:
     orbital_velocity: float  # m/s
     position: Vector3D
     velocity: Vector3D
-    
+
     def get_surface_gravity(self) -> float:
         """Calculate surface gravity in m/s²."""
         G = 6.67430e-11  # Gravitational constant
         return (G * self.mass) / (self.radius ** 2)
-    
+
     def is_in_atmosphere(self, position: Vector3D) -> bool:
         """Check if position is within atmosphere."""
         if not self.has_atmosphere:
@@ -262,19 +262,19 @@ class Objective:
 @dataclass
 class Mission:
     """Mission with objectives, constraints, and tracking."""
-    
+
     # Identity
     id: str
     name: str
     type: str  # "tutorial", "free_flight", "challenge"
     difficulty: str  # "beginner", "intermediate", "advanced"
     description: str
-    
+
     # Objectives
     objectives: List[Objective] = field(default_factory=list)
     current_objective_index: int = 0
     completion_criteria: Dict[str, any] = field(default_factory=dict)
-    
+
     # Constraints & Setup
     start_position: Vector3D = field(default_factory=Vector3D)
     target_body_id: Optional[str] = None
@@ -282,23 +282,23 @@ class Mission:
     time_limit: Optional[float] = None  # seconds
     allowed_ship_types: List[str] = field(default_factory=list)
     failure_conditions: List[str] = field(default_factory=list)
-    
+
     # Tracking
     start_time: Optional[float] = None
     elapsed_time: float = 0.0
     distance_traveled: float = 0.0
     fuel_consumed: float = 0.0
     objectives_completed: int = 0
-    
+
     # Status
     status: str = "not_started"  # "not_started", "in_progress", "completed", "failed"
     estimated_time: float = 3600.0  # seconds
-    
+
     def start(self) -> None:
         """Start the mission."""
         self.start_time = datetime.now().timestamp()
         self.status = "in_progress"
-    
+
     def complete_objective(self, objective_id: str) -> None:
         """Mark an objective as completed."""
         for obj in self.objectives:
@@ -306,7 +306,7 @@ class Mission:
                 obj.completed = True
                 self.objectives_completed += 1
                 break
-    
+
     def check_completion(self) -> bool:
         """Check if all objectives are completed."""
         return all(obj.completed for obj in self.objectives)
@@ -369,13 +369,13 @@ from datetime import datetime
 @dataclass
 class User:
     """User profile with preferences and statistics."""
-    
+
     # Identity
     id: str
     username: str
     email: str
     display_name: str
-    
+
     # Preferences
     screen_width: int = 1280
     screen_height: int = 720
@@ -386,7 +386,7 @@ class User:
     master_volume: float = 0.8  # 0.0-1.0
     music_volume: float = 0.6  # 0.0-1.0
     sfx_volume: float = 0.8  # 0.0-1.0
-    
+
     # Statistics
     total_flight_time: float = 0.0  # hours
     missions_completed: int = 0
@@ -394,17 +394,17 @@ class User:
     distance_traveled: float = 0.0  # km
     fuel_consumed: float = 0.0  # L
     ship_types_used: List[str] = field(default_factory=list)
-    
+
     # Progression
     unlocked_ships: List[str] = field(default_factory=list)
     completed_missions: List[str] = field(default_factory=list)
     best_times: Dict[str, float] = field(default_factory=dict)
     achievements: List[str] = field(default_factory=list)
-    
+
     # Metadata
     created_at: datetime = field(default_factory=datetime.now)
     last_login: Optional[datetime] = None
-    
+
     def update_statistics(
         self,
         flight_time: float,
@@ -419,7 +419,7 @@ class User:
         if ship_type not in self.ship_types_used:
             self.ship_types_used.append(ship_type)
         self.last_login = datetime.now()
-    
+
     def add_completed_mission(self, mission_id: str, time: float) -> None:
         """Record a completed mission."""
         if mission_id not in self.completed_missions:
@@ -443,22 +443,22 @@ class Vector3D:
     x: float
     y: float
     z: float
-    
+
     def magnitude(self) -> float:
         """Calculate vector magnitude."""
         return math.sqrt(self.x**2 + self.y**2 + self.z**2)
-    
+
     def normalize(self) -> 'Vector3D':
         """Return normalized vector."""
         mag = self.magnitude()
         return Vector3D(self.x/mag, self.y/mag, self.z/mag) if mag > 0 else Vector3D(0,0,0)
-    
+
     def __add__(self, other: 'Vector3D') -> 'Vector3D':
         return Vector3D(self.x + other.x, self.y + other.y, self.z + other.z)
-    
+
     def __sub__(self, other: 'Vector3D') -> 'Vector3D':
         return Vector3D(self.x - other.x, self.y - other.y, self.z - other.z)
-    
+
     def __mul__(self, scalar: float) -> 'Vector3D':
         return Vector3D(self.x * scalar, self.y * scalar, self.z * scalar)
 ```
@@ -476,7 +476,7 @@ class Quaternion:
     x: float  # i component
     y: float  # j component
     z: float  # k component
-    
+
     def to_euler(self) -> tuple[float, float, float]:
         """Convert to Euler angles (pitch, yaw, roll) in radians."""
         # Extract angles

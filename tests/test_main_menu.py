@@ -15,4 +15,3 @@ from __future__ import annotations
 # - Click handling responds within 0.1s
 # - Menu options are selectable
 # - Keyboard navigation works
-

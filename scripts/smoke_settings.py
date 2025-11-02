@@ -1,8 +1,9 @@
 import os
+
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
 import sys
-import time
+
 import pygame
 
 # Allow running from repo root or script dir
@@ -11,7 +12,7 @@ SRC_DIR = os.path.join(REPO_ROOT, "src")
 if SRC_DIR not in sys.path:
     sys.path.insert(0, SRC_DIR)
 
-from screens.settings import SettingsScreen, SettingsCategory  # noqa: E402
+from screens.settings import SettingsCategory, SettingsScreen  # noqa: E402
 
 
 def main() -> int:
@@ -19,7 +20,9 @@ def main() -> int:
     try:
         width, height = 800, 600
         screen = pygame.display.set_mode((width, height))
-        settings = SettingsScreen(width=width, height=height, font_scale=1.0, high_contrast=False)
+        settings = SettingsScreen(
+            width=width, height=height, font_scale=1.0, high_contrast=False
+        )
 
         # Initial render
         settings.start_fade_in()
@@ -49,4 +52,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

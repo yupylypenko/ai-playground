@@ -1,8 +1,9 @@
 import os
+
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
 import sys
-import time
+
 import pygame
 
 # Allow running from repo root or script dir
@@ -19,7 +20,9 @@ def main() -> int:
     try:
         width, height = 800, 600
         screen = pygame.display.set_mode((width, height))
-        menu = MainMenuScreen(width=width, height=height, font_scale=1.0, high_contrast=False)
+        menu = MainMenuScreen(
+            width=width, height=height, font_scale=1.0, high_contrast=False
+        )
 
         # Initial render
         menu.start_fade_in()

@@ -49,4 +49,5 @@ logs/
 
 # Generated screenshots (keep docs/images/*.png tracked)
 /smoke_*.png
-/smoke_main_menu.png
+/smoke_main_menu.png.git/hooks/pre-commit.example
+bin/

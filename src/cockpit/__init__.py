@@ -8,4 +8,4 @@ from .controls import ControlPanel
 from .hud import HUD
 from .instruments import InstrumentPanel
 
-__all__ = ['ControlPanel', 'HUD', 'InstrumentPanel']
+__all__ = ["ControlPanel", "HUD", "InstrumentPanel"]

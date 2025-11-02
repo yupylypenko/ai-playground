@@ -7,4 +7,4 @@ mission selection, and settings screens.
 
 from .main_menu import MainMenuScreen
 
-__all__ = ['MainMenuScreen']
+__all__ = ["MainMenuScreen"]
