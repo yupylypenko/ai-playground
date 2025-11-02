@@ -115,6 +115,7 @@ ai-playground/
 For detailed documentation, see the `docs/` folder:
 
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture and design
+- **[datastructure.md](docs/datastructure.md)** - Core data structures and models
 - **[DIAGRAMS.md](docs/DIAGRAMS.md)** - Visual PlantUML diagrams
 - **[engineeringpractices.md](docs/engineeringpractices.md)** - Technical standards and practices
 - **[IMPLEMENTATION.md](docs/IMPLEMENTATION.md)** - Implementation roadmap
