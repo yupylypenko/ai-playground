@@ -1,8 +1,8 @@
 numpy>=1.20.0
+Pillow>=8.0.0
 pygame>=2.0.0
 PyOpenGL>=3.1.0
 PyOpenGL-accelerate>=3.1.0
-Pillow>=8.0.0
 
 # Optional but recommended
 pytest>=6.2.0

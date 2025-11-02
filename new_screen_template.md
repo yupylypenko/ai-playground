@@ -17,7 +17,7 @@ This template serves as a guide for creating new screens in the Cosmic Flight Si
 
 ## UI Elements
 
-- **Title**: 
+- **Title**:
   - **Text**: [Title text]
   - **Font Size**: [e.g., 72px]
   - **Position**: [e.g., Centered at the top]
@@ -62,5 +62,5 @@ This template serves as a guide for creating new screens in the Cosmic Flight Si
 
 ---
 
-**Author**: [Your Name]  
+**Author**: [Your Name]
 **Date**: [Creation Date]

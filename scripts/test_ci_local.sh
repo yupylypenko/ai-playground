@@ -21,12 +21,14 @@ FAILED=0
 
 # Function to print test result
 test_result() {
-    if [ $1 -eq 0 ]; then
-        echo -e "${GREEN}✓${NC} $2"
-        ((PASSED++))
+    local exit_code=$1
+    local message=$2
+    if [ "$exit_code" -eq 0 ]; then
+        echo -e "${GREEN}✓${NC} $message"
+        PASSED=$((PASSED + 1))
     else
-        echo -e "${RED}✗${NC} $2"
-        ((FAILED++))
+        echo -e "${RED}✗${NC} $message"
+        FAILED=$((FAILED + 1))
     fi
 }
 
@@ -70,7 +72,7 @@ echo ""
 echo "Running Black (code formatter)..."
 python3 -m black --check --diff --line-length 88 src/ tests/ scripts/*.py main.py 2>&1 | head -20
 BLACK_EXIT=${PIPESTATUS[0]}
-if [ $BLACK_EXIT -eq 0 ]; then
+if [ "$BLACK_EXIT" -eq 0 ]; then
     test_result 0 "Black formatting check"
 else
     test_result 1 "Black formatting check (needs formatting)"
@@ -81,13 +83,13 @@ echo ""
 echo "Running Ruff (linter)..."
 python3 -m ruff check --select E,F,W,I,UP,PL,PT,B,SIM,ISC,PERF,COM,ANN src/ tests/ scripts/*.py main.py 2>&1 | head -30
 RUFF_EXIT=${PIPESTATUS[0]}
-test_result $RUFF_EXIT "Ruff linting check"
+test_result "$RUFF_EXIT" "Ruff linting check"
 
 echo ""
 echo "Running MyPy (type checker)..."
 python3 -m mypy src/ --ignore-missing-imports --no-strict-optional 2>&1 | head -20
 MYPY_EXIT=${PIPESTATUS[0]}
-if [ $MYPY_EXIT -eq 0 ] || [ $MYPY_EXIT -eq 2 ]; then  # Exit 2 is also OK for partial checks
+if [ "$MYPY_EXIT" -eq 0 ] || [ "$MYPY_EXIT" -eq 2 ]; then  # Exit 2 is also OK for partial checks
     test_result 0 "MyPy type checking"
 else
     test_result 1 "MyPy type checking (some errors)"
@@ -97,7 +99,7 @@ echo ""
 echo "Running Pyright (type checker)..."
 python3 -m pyright src/ --pythonversion 3.11 2>&1 | head -20
 PYRIGHT_EXIT=${PIPESTATUS[0]}
-if [ $PYRIGHT_EXIT -eq 0 ]; then
+if [ "$PYRIGHT_EXIT" -eq 0 ]; then
     test_result 0 "Pyright type checking"
 else
     test_result 1 "Pyright type checking (some errors)"
@@ -124,7 +126,7 @@ python3 -m pytest tests/ \
     --maxfail=5 \
     -m "not slow" 2>&1 | tail -40
 PYTEST_UNIT_EXIT=${PIPESTATUS[0]}
-test_result $PYTEST_UNIT_EXIT "Unit tests"
+test_result "$PYTEST_UNIT_EXIT" "Unit tests"
 
 echo ""
 echo "Running Integration Tests..."
@@ -132,13 +134,13 @@ python3 -m pytest tests/test_integration.py \
     -v \
     --tb=short 2>&1 | tail -20
 PYTEST_INTEGRATION_EXIT=${PIPESTATUS[0]}
-test_result $PYTEST_INTEGRATION_EXIT "Integration tests"
+test_result "$PYTEST_INTEGRATION_EXIT" "Integration tests"
 
 echo ""
 echo "Testing main.py integration..."
 python3 main.py --test-only 2>&1 | grep -E "(✓|✗|All|passed|failed)" | head -15
 MAIN_TEST_EXIT=${PIPESTATUS[0]}
-test_result $MAIN_TEST_EXIT "Main.py integration test"
+test_result "$MAIN_TEST_EXIT" "Main.py integration test"
 
 echo ""
 echo "======================================================================"
@@ -185,7 +187,7 @@ echo -e "${GREEN}Passed:${NC} $PASSED"
 echo -e "${RED}Failed:${NC} $FAILED"
 echo ""
 
-if [ $FAILED -eq 0 ]; then
+if [ "$FAILED" -eq 0 ]; then
     echo -e "${GREEN}✓ All CI checks passed!${NC}"
     exit 0
 else

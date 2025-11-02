@@ -25,23 +25,23 @@ DESCRIBE ACCOUNTS;
 
 SELECT '' as '';
 SELECT '=== ACCOUNTS DATA (first 10 rows) ===' as '';
-SELECT 
+SELECT
     account_id,
     username,
     first_name,
     last_name,
-    CASE 
+    CASE
         WHEN password_salt IS NOT NULL AND password_salt != '' THEN 'Hashed'
         ELSE 'Plain Text'
     END as password_type,
     created_at,
     status_id
-FROM ACCOUNTS 
+FROM ACCOUNTS
 LIMIT 10;
 
 SELECT '' as '';
 SELECT '=== PASSWORD MIGRATION STATUS ===' as '';
-SELECT 
+SELECT
     COUNT(*) as total_accounts,
     SUM(CASE WHEN password_salt IS NOT NULL AND password_salt != '' THEN 1 ELSE 0 END) as migrated_accounts,
     SUM(CASE WHEN password_salt IS NULL OR password_salt = '' THEN 1 ELSE 0 END) as legacy_accounts,
@@ -54,14 +54,14 @@ SELECT COUNT(*) as total_tasks FROM TASKS;
 
 SELECT '' as '';
 SELECT '=== TASKS DATA (first 5 rows) ===' as '';
-SELECT 
+SELECT
     task_id,
     account_id,
     LEFT(task_description, 50) as task_description,
     created_at,
     status_id,
     priority_id
-FROM TASKS 
+FROM TASKS
 LIMIT 5;
 
 SELECT '' as '';
@@ -70,13 +70,13 @@ SELECT COUNT(*) as total_sessions FROM ACCOUNT_SESSIONS;
 
 SELECT '' as '';
 SELECT '=== ACCOUNT_SESSIONS (recent 5) ===' as '';
-SELECT 
+SELECT
     session_id,
     account_id,
     created_at,
     last_accessed_at
-FROM ACCOUNT_SESSIONS 
-ORDER BY last_accessed_at DESC 
+FROM ACCOUNT_SESSIONS
+ORDER BY last_accessed_at DESC
 LIMIT 5;
 
 SELECT '' as '';

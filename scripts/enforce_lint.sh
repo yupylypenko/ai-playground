@@ -19,7 +19,7 @@ NC='\033[0m' # No Color
 if ! command -v pre-commit &> /dev/null; then
     echo -e "${YELLOW}Pre-commit not found. Installing...${NC}"
     echo ""
-    
+
     # Try different installation methods
     if python3 -m pip install --user pre-commit 2>/dev/null; then
         echo -e "${GREEN}✓ Pre-commit installed via pip${NC}"
@@ -62,10 +62,15 @@ echo ""
 
 # Run hooks on staged files
 if git diff --cached --name-only --diff-filter=ACM | grep -q .; then
-    if pre-commit run --files $(git diff --cached --name-only --diff-filter=ACM 2>/dev/null | head -5 | tr '\n' ' ') 2>/dev/null || python3 -m pre_commit run --files $(git diff --cached --name-only --diff-filter=ACM 2>/dev/null | head -5 | tr '\n' ' ') 2>/dev/null; then
-        echo -e "${GREEN}✓ Hooks work correctly${NC}"
+    STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null | head -5 | tr '\n' ' ')
+    if [ -n "$STAGED_FILES" ]; then
+        if pre-commit run --files "$STAGED_FILES" 2>/dev/null || python3 -m pre_commit run --files "$STAGED_FILES" 2>/dev/null; then
+            echo -e "${GREEN}✓ Hooks work correctly${NC}"
+        else
+            echo -e "${YELLOW}⚠ Some hooks may need fixes${NC}"
+        fi
     else
-        echo -e "${YELLOW}⚠ Some hooks may need fixes${NC}"
+        echo "No staged files to test"
     fi
 else
     echo "No staged files to test"

@@ -92,4 +92,3 @@ This is a documentation-only PR that establishes the foundation for the Cosmic F
 - Add cockpit controls
 - Create 3D rendering system
 - Develop mission system
-

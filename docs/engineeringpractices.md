@@ -76,10 +76,10 @@ Key features/patterns documented here.
 class MainMenuScreen:
     """
     Main menu screen for the Cosmic Flight Simulator.
-    
+
     Displays menu options and handles user selection. Designed to respond
     within 0.1 seconds to user clicks per performance requirements.
-    
+
     Attributes:
         width: Screen width in pixels
         height: Screen height in pixels
@@ -93,12 +93,12 @@ class MainMenuScreen:
 def handle_click(self, pos: tuple[int, int]) -> Optional[MenuOption]:
     """
     Handle mouse click on the menu screen.
-    
+
     Designed to respond within 0.1 seconds per performance requirements.
-    
+
     Args:
         pos: Mouse position (x, y)
-        
+
     Returns:
         Selected MenuOption if click was on a menu item, None otherwise
     """
@@ -150,23 +150,23 @@ All screen classes follow this pattern:
 
 ```python
 class XxxScreen:
-    def __init__(self, width: int, height: int, *, 
-                 fullscreen: bool, font_scale: float, 
+    def __init__(self, width: int, height: int, *,
+                 fullscreen: bool, font_scale: float,
                  high_contrast: bool, enable_sounds: bool) -> None:
         # Initialize dimensions, fonts, theme colors
-        
+
     def render(self, surface: pygame.Surface) -> None:
         # Render screen content
-        
+
     def handle_click(self, pos: tuple[int, int]) -> Optional[Enum]:
         # Handle mouse clicks (response within 0.1s)
-        
+
     def handle_keyboard(self, key: int) -> Optional[Enum]:
         # Handle keyboard input
-        
+
     def handle_mouse_move(self, pos: tuple[int, int]) -> None:
         # Update hover state
-        
+
     def _private_helpers(self) -> None:
         # Private initialization/render helpers
 ```

@@ -14,7 +14,7 @@ This guide explains how to test the GitHub Actions CI pipeline locally.
    sudo apt-get install docker.io
    sudo systemctl start docker
    sudo systemctl enable docker
-   
+
    # Or via snap
    snap install docker
    ```
@@ -234,7 +234,7 @@ If CI fails locally:
 ### Act Issues
 
 **Problem**: `act` can't connect to Docker
-**Solution**: 
+**Solution**:
 ```bash
 sudo systemctl start docker
 sudo usermod -aG docker $USER
@@ -253,7 +253,7 @@ newgrp docker
 **Solution**: Use `python3` explicitly or set alias
 
 **Problem**: Dependencies not installed
-**Solution**: 
+**Solution**:
 ```bash
 pip install -r requirements.txt
 pip install -r requirements-dev.txt

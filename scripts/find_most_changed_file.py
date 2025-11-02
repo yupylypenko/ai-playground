@@ -40,7 +40,9 @@ def run_git_log(limit: int | None, include_merges: bool) -> List[str]:
     return result.stdout.splitlines()
 
 
-def most_frequently_changed(limit: int | None, include_merges: bool) -> tuple[list[tuple[str, int]], int]:
+def most_frequently_changed(
+    limit: int | None, include_merges: bool
+) -> tuple[list[tuple[str, int]], int]:
     lines = run_git_log(limit=limit, include_merges=include_merges)
     counter: Counter[str] = Counter()
 
@@ -66,9 +68,15 @@ def most_frequently_changed(limit: int | None, include_merges: bool) -> tuple[li
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Find the most frequently changed file(s) in the repo")
-    parser.add_argument("--limit", type=int, default=None, help="Limit number of commits to scan")
-    parser.add_argument("--include-merges", action="store_true", help="Include merge commits")
+    parser = argparse.ArgumentParser(
+        description="Find the most frequently changed file(s) in the repo"
+    )
+    parser.add_argument(
+        "--limit", type=int, default=None, help="Limit number of commits to scan"
+    )
+    parser.add_argument(
+        "--include-merges", action="store_true", help="Include merge commits"
+    )
     args = parser.parse_args()
 
     # Ensure we run inside a git repo
@@ -77,7 +85,9 @@ def main() -> int:
         return 1
 
     try:
-        top, total = most_frequently_changed(limit=args.limit, include_merges=args.include_merges)
+        top, total = most_frequently_changed(
+            limit=args.limit, include_merges=args.include_merges
+        )
     except subprocess.CalledProcessError as e:
         print(f"Error invoking git: {e}")
         return 1

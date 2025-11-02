@@ -5,9 +5,15 @@ Core physics engine and spacecraft simulation.
 """
 
 from .physics import PhysicsEngine
+from .solar_system import CelestialBody, SolarSystem
 from .spacecraft import Spacecraft
-from .solar_system import SolarSystem, CelestialBody
 from .types import Quaternion, Vector3D
 
-__all__ = ['PhysicsEngine', 'Vector3D', 'Spacecraft', 'SolarSystem', 'CelestialBody', 'Quaternion']
-
+__all__ = [
+    "PhysicsEngine",
+    "Vector3D",
+    "Spacecraft",
+    "SolarSystem",
+    "CelestialBody",
+    "Quaternion",
+]

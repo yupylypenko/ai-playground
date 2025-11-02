@@ -130,7 +130,7 @@ EOF
 
 To check password migration status:
 ```sql
-SELECT 
+SELECT
     COUNT(*) as total_accounts,
     SUM(CASE WHEN password_salt IS NOT NULL AND password_salt != '' THEN 1 ELSE 0 END) as migrated_accounts,
     SUM(CASE WHEN password_salt IS NULL OR password_salt = '' THEN 1 ELSE 0 END) as legacy_accounts
@@ -197,5 +197,5 @@ For issues or questions:
 
 ---
 
-**Last Updated**: November 2024  
+**Last Updated**: November 2024
 **Version**: 1.0

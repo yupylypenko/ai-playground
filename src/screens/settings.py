@@ -14,13 +14,14 @@ This implementation:
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
 
 import pygame
 
 
 class SettingsCategory(Enum):
     """Available settings categories"""
+
     DISPLAY = "Display"
     AUDIO = "Audio"
     CONTROLS = "Controls"
@@ -31,10 +32,10 @@ class SettingsCategory(Enum):
 class SettingsScreen:
     """
     Settings screen for the Cosmic Flight Simulator.
-    
+
     Displays settings categories and handles navigation.
     Designed to respond within 0.1 seconds per performance requirements.
-    
+
     Attributes:
         width: Screen width in pixels
         height: Screen height in pixels
@@ -154,11 +155,7 @@ class SettingsScreen:
             return
 
         # Render title
-        title_text = self.title_font.render(
-            "Settings",
-            True,
-            self.title_color
-        )
+        title_text = self.title_font.render("Settings", True, self.title_color)
         title_rect = title_text.get_rect(center=(self.width // 2, 150))
         surface.blit(title_text, title_rect)
 
@@ -244,8 +241,12 @@ class SettingsScreen:
             option_y = start_y + (i * spacing)
 
             # Check if click is within option bounds
-            if (self.width // 2 - option_width // 2 <= x <= self.width // 2 + option_width // 2 and
-                    option_y - option_height // 2 <= y <= option_y + option_height // 2):
+            if (
+                self.width // 2 - option_width // 2
+                <= x
+                <= self.width // 2 + option_width // 2
+                and option_y - option_height // 2 <= y <= option_y + option_height // 2
+            ):
                 self.selected_category = category
                 if self.click_sound:
                     try:
@@ -279,7 +280,9 @@ class SettingsScreen:
                 self.selected_category = categories[0]
             else:
                 current_index = categories.index(self.selected_category)
-                self.selected_category = categories[(current_index - 1) % len(categories)]
+                self.selected_category = categories[
+                    (current_index - 1) % len(categories)
+                ]
             if self.hover_sound:
                 try:
                     self.hover_sound.play()
@@ -290,7 +293,9 @@ class SettingsScreen:
                 self.selected_category = categories[0]
             else:
                 current_index = categories.index(self.selected_category)
-                self.selected_category = categories[(current_index + 1) % len(categories)]
+                self.selected_category = categories[
+                    (current_index + 1) % len(categories)
+                ]
             if self.hover_sound:
                 try:
                     self.hover_sound.play()
@@ -322,8 +327,10 @@ class SettingsScreen:
         for i, category in enumerate(categories):
             option_y = start_y + (i * spacing)
             if (
-                    self.width // 2 - option_width // 2 <= x <= self.width // 2 + option_width // 2
-                    and option_y - option_height // 2 <= y <= option_y + option_height // 2
+                self.width // 2 - option_width // 2
+                <= x
+                <= self.width // 2 + option_width // 2
+                and option_y - option_height // 2 <= y <= option_y + option_height // 2
             ):
                 new_hover = category
                 break
@@ -359,4 +366,3 @@ class SettingsScreen:
             Currently selected SettingsCategory or None
         """
         return self.selected_category
-

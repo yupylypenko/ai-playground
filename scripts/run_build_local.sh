@@ -12,7 +12,6 @@ echo ""
 
 # Colors
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
@@ -23,7 +22,7 @@ FAILED=0
 test_result() {
     local exit_code=$1
     local message=$2
-    if [ $exit_code -eq 0 ]; then
+    if [ "$exit_code" -eq 0 ]; then
         echo -e "${GREEN}✓${NC} $message"
         PASSED=$((PASSED + 1))
     else
@@ -46,7 +45,7 @@ test_result 0 "Code checkout"
 # Step 2: Set up Python
 echo ""
 echo "Step 2: Set up Python"
-PYTHON_VERSION="3.11"
+# PYTHON_VERSION="3.11"  # Used for reference, not executed
 echo "  Checking Python version..."
 if python3 --version | grep -q "Python 3"; then
     ACTUAL_VERSION=$(python3 --version | cut -d' ' -f2 | cut -d'.' -f1,2)

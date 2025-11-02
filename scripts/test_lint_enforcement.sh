@@ -41,7 +41,7 @@ import sys
 # Missing blank line
 def bad_function():
     x=1+2  # No spaces around operator
-    y = [1,2,3]  # Trailing whitespace   
+    y = [1,2,3]  # Trailing whitespace
     return x+y
 
 # Unused import would be caught by ruff
@@ -87,4 +87,3 @@ echo "  2. Stage it: git add <file>"
 echo "  3. Try to commit: git commit -m 'test'"
 echo "  4. Hooks should run automatically"
 echo ""
-

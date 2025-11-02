@@ -64,26 +64,26 @@
   - Orientation indicators
   - Velocity components
   - Acceleration readings
-  
+
 - **Navigation Panel**:
   - 3D star map
   - Course calculation
   - Target selection
   - Distance to waypoints
   - ETA calculations
-  
+
 - **Propulsion Display**:
   - Current thrust level
   - Fuel remaining (percentage and volume)
   - Engine efficiency
   - Thrust vector direction
-  
+
 - **Life Support**:
   - Oxygen levels
   - Cabin temperature
   - Pressure readings
   - Life support status
-  
+
 - **Communication Panel**:
   - Comm link status
   - Signal strength
@@ -99,7 +99,7 @@
   - Shift: Boost
   - Space: Emergency stop (kill thrust)
   - Tab: Toggle auto-pilot
-  
+
 - **Auto-Pilot Features**:
   - Stabilize orientation
   - Maintain velocity

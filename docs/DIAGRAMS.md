@@ -11,30 +11,30 @@ This diagram shows the overall system architecture with all modules and their re
 !theme plain
 
 package "Cosmic Flight Simulator" {
-    
+
     package "User Interface Layer" {
         [User Input] as input
         [Cockpit View] as cockpit
         [HUD Display] as hud
     }
-    
+
     package "Cockpit Module" {
         [Control Panel] as controls
         [Instrument Panel] as instruments
     }
-    
+
     package "Simulator Module" {
         [Physics Engine] as physics
         [Spacecraft] as spacecraft
         [Solar System] as solar
     }
-    
+
     package "Visualization Module" {
         [Renderer] as renderer
         [Camera] as camera
         [3D Models] as models
     }
-    
+
     ' Data Flow
     input --> controls
     controls --> spacecraft
@@ -43,7 +43,7 @@ package "Cosmic Flight Simulator" {
     physics --> instruments
     instruments --> hud
     hud --> cockpit
-    
+
     physics --> renderer
     solar --> renderer
     spacecraft --> renderer
@@ -314,27 +314,27 @@ This diagram shows the state transitions during mission execution.
 !theme plain
 state "Mission Flow" as MissionFlow {
     [*] --> Initializing
-    
+
     Initializing --> MainMenu : "System Ready"
     MainMenu --> Tutorial : "Start Tutorial"
     MainMenu --> FreeFlight : "Free Flight"
     MainMenu --> Challenge : "Challenge Mode"
-    
+
     Tutorial --> FreeFlight : "Tutorial Complete"
-    
+
     FreeFlight --> Docking : "Approach Station"
     FreeFlight --> Exploration : "Explore Planet"
-    
+
     Docking --> FreeFlight : "Docking Complete"
     Exploration --> FreeFlight : "Exploration Done"
-    
+
     Challenge --> MissionComplete : "Challenge Passed"
     MissionComplete --> MainMenu : "Return to Menu"
-    
+
     FreeFlight --> Emergency : "System Failure"
     Emergency --> Crash : "Unrecoverable"
     Emergency --> FreeFlight : "Recovery Successful"
-    
+
     Crash --> MainMenu : "Restart"
 }
 

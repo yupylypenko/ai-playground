@@ -172,13 +172,13 @@ jobs:
           echo "Running integration tests..."
           # Test main.py integration suite
           python main.py --test-only || echo "Integration tests completed"
-          
+
           # Test data structure integration
           python -c "
           from src.simulator import PhysicsEngine, Vector3D, Spacecraft, SolarSystem
           from src.models import User, Mission
           print('✓ All imports successful')
-          
+
           # Test model instantiation
           ship = Spacecraft(
               id='test', name='Test', ship_type='scout',
@@ -188,7 +188,7 @@ jobs:
           )
           assert ship.get_fuel_percent() == 50.0
           print('✓ Spacecraft model works')
-          
+
           user = User(id='u1', username='test', email='test@example.com', display_name='Test')
           print('✓ User model works')
           print('Integration tests passed!')

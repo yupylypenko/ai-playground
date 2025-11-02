@@ -43,7 +43,7 @@ MainMenuScreen
    - Triggers hover state
    - Color changes to highlight color
    - Optional hover sound plays
-   
+
 2. User clicks on menu option
    - Triggers selected state
    - Click sound plays (if enabled)
@@ -54,14 +54,14 @@ MainMenuScreen
 1. User presses Arrow Keys
    - Up/Down: Navigate through menu options
    - Wraps around at boundaries
-   
+
 2. User presses Enter/Space
    - Confirms selection
    - Triggers click logic
-   
+
 3. User presses F11
    - Toggles fullscreen mode
-   
+
 4. User presses 'A'
    - Toggles accessibility mode (high-contrast)
 
@@ -187,11 +187,11 @@ Navigation:
   A/D        Roll left/right
   Q/E        Yaw left/right
   Arrow Keys Thrust forward/back/left/right
-  
+
 Thrust:
   Shift      Boost
   Space      Emergency stop
-  
+
 View:
   Tab        Switch camera views
   Mouse      Look around cockpit
@@ -406,10 +406,10 @@ Full functionality maintained
 ```
 MainMenuScreen ←→ SettingsScreen
   (bidirectional via "Settings" / "Back")
-  
+
 MainMenuScreen → [Future screens]
   (Free Flight, Tutorial, Missions)
-  
+
 [Future screens] → MainMenuScreen
   (ESC to return)
 ```
