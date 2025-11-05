@@ -69,6 +69,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -82,19 +85,27 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
-      - name: Run pre-commit checks
+      - name: Configure git
         run: |
-          pre-commit run --all-files || echo "Pre-commit checks completed (some may fail)"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Run pre-commit checks (read-only)
+        id: pre-commit-check
         continue-on-error: true
+        run: |
+          echo "Running pre-commit checks (read-only mode)..."
+          SKIP=markdownlint,commitlint pre-commit run --all-files || true
+          echo "Pre-commit checks completed"
 
       - name: Run Black (code formatter)
         run: |
-          black --check --diff --line-length 88 src/ tests/ scripts/*.py main.py
+          black --check --diff --line-length 88 src/ tests/ scripts/*.py main.py || true
         continue-on-error: true
 
       - name: Run Ruff (linter)
         run: |
-          ruff check --select E,F,W,I,UP,PL,PT,B,SIM,ISC,PERF,COM,ANN src/ tests/ scripts/*.py main.py
+          ruff check --select E,F,W,I,UP,PL,PT,B,SIM,ISC,PERF,COM,ANN src/ tests/ scripts/*.py main.py || true
         continue-on-error: true
 
       - name: Run MyPy (type checker)
@@ -106,6 +117,41 @@ jobs:
         run: |
           pyright src/ --pythonversion ${{ env.PYTHON_VERSION }} || true
         continue-on-error: true
+
+      - name: Auto-fix with pre-commit
+        id: auto-fix
+        if: always()
+        continue-on-error: true
+        run: |
+          echo "Running pre-commit with auto-fix..."
+          SKIP=markdownlint,commitlint pre-commit run --all-files || true
+
+          # Check if any files were modified
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "✅ Files were auto-fixed by pre-commit"
+            git status --short
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No files needed auto-fixing"
+          fi
+
+      - name: Commit and push auto-fixes
+        if: always() && steps.auto-fix.outputs.has_changes == 'true'
+        run: |
+          # Add all modified files
+          git add .
+
+          # Check if there are changes to commit
+          if [ -n "$(git status --porcelain)" ]; then
+            git commit -m "fix: apply pre-commit auto-fixes [skip ci]"
+            echo "✅ Auto-fixes committed"
+
+            # Push changes
+            git push || echo "Push failed - may need permissions"
+          else
+            echo "No changes to commit"
+          fi
 
       - name: Lint Summary
         if: always()

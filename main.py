@@ -21,6 +21,8 @@ except ImportError:
 
 # Import simulator modules
 try:
+    from src.adapters import MongoDatabase
+    from src.cockpit.config import MongoConfig
     from src.models import Mission, Objective, User
     from src.screens.main_menu import MainMenuScreen
     from src.simulator import (
@@ -216,6 +218,84 @@ def run_menu_test() -> None:
         pygame.quit()
 
 
+def test_mongodb_storage() -> bool:
+    """
+    Test MongoDB storage integration.
+
+    Returns:
+        True if all tests pass
+    """
+    print("\nTesting MongoDB storage...")
+
+    try:
+        from src.adapters import MongoDatabase
+        from src.cockpit.config import MongoConfig
+
+        config = MongoConfig.from_env()
+        print(f"  Connecting to MongoDB: {config.get_connection_string()}")
+
+        with MongoDatabase(config) as db:
+            user_repo = db.user_repository
+            mission_repo = db.mission_repository
+
+            # Test User storage
+            test_user = User(
+                id="test-user-001",
+                username="testuser",
+                email="test@example.com",
+                display_name="Test User",
+            )
+            user_repo.save_user(test_user)
+            print("  ✓ User saved to MongoDB")
+
+            retrieved_user = user_repo.get_user("test-user-001")
+            assert retrieved_user is not None
+            assert retrieved_user.username == "testuser"
+            print("  ✓ User retrieved from MongoDB")
+
+            # Test Mission storage
+            test_mission = Mission(
+                id="test-mission-001",
+                name="Test Mission",
+                type="tutorial",
+                difficulty="beginner",
+                description="A test mission",
+            )
+            test_mission.objectives.append(
+                Objective(
+                    id="obj-001",
+                    description="Reach orbit",
+                    type="reach",
+                    target_id="earth",
+                )
+            )
+            mission_repo.save_mission(test_mission)
+            print("  ✓ Mission saved to MongoDB")
+
+            retrieved_mission = mission_repo.get_mission("test-mission-001")
+            assert retrieved_mission is not None
+            assert retrieved_mission.name == "Test Mission"
+            assert len(retrieved_mission.objectives) == 1
+            print("  ✓ Mission retrieved from MongoDB")
+
+            # Cleanup test data
+            user_repo.delete_user("test-user-001")
+            mission_repo.delete_mission("test-mission-001")
+            print("  ✓ Test data cleaned up")
+
+        print("\n✓ All MongoDB storage tests passed!")
+        return True
+
+    except Exception as e:
+        print(f"\n✗ MongoDB test failed: {e}")
+        print("  Make sure MongoDB is running locally on port 27017")
+        print("  Or set MONGODB_URI environment variable")
+        import traceback
+
+        traceback.print_exc()
+        return False
+
+
 def main() -> int:
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Cosmic Flight Simulator")
@@ -233,6 +313,16 @@ def main() -> int:
         "--test-only",
         action="store_true",
         help="Run tests only, don't start full application",
+    )
+    parser.add_argument(
+        "--test-db",
+        action="store_true",
+        help="Test MongoDB connection and storage",
+    )
+    parser.add_argument(
+        "--skip-db",
+        action="store_true",
+        help="Skip database connection (useful if MongoDB not available)",
     )
     args = parser.parse_args()
 
@@ -255,6 +345,12 @@ def main() -> int:
         print("\n✗ Data structure tests failed")
         return 1
 
+    # Test MongoDB if requested
+    if args.test_db:
+        if not test_mongodb_storage():
+            print("\n✗ MongoDB storage tests failed")
+            return 1
+
     # Run menu test if requested or in test mode
     if args.test_only:
         run_menu_test()
@@ -265,6 +361,7 @@ def main() -> int:
     print("🌌 Full simulator launch coming soon")
     print("\nNote: Currently only tests are implemented.")
     print("To test the menu, run: python main.py --test-only")
+    print("To test MongoDB, run: python main.py --test-db")
 
     return 0
 
