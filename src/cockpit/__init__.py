@@ -4,8 +4,22 @@ Cockpit Control System
 Interactive cockpit with HUD, controls, and instruments.
 """
 
-from .controls import ControlPanel
-from .hud import HUD
-from .instruments import InstrumentPanel
+# Storage ports and configuration
+from .config import MongoConfig
+from .services import MissionService, UserService
+from .storage import (
+    MissionRepository,
+    ObjectiveRepository,
+    UserRepository,
+)
 
-__all__ = ["ControlPanel", "HUD", "InstrumentPanel"]
+__all__ = [
+    "MongoConfig",
+    "UserRepository",
+    "MissionRepository",
+    "ObjectiveRepository",
+    "UserService",
+    "MissionService",
+]
+
+
