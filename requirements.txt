@@ -4,6 +4,8 @@ pygame>=2.0.0
 PyOpenGL>=3.1.0
 PyOpenGL-accelerate>=3.1.0
 pymongo>=4.0.0
+beautifulsoup4>=4.9.0
+requests>=2.25.0
 
 # Optional but recommended
 pytest>=6.2.0
