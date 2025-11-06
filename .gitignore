@@ -51,3 +51,4 @@ logs/
 /smoke_*.png
 /smoke_main_menu.png.git/hooks/pre-commit.example
 bin/
+coverage.xml
