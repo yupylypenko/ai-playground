@@ -290,3 +290,30 @@ class User:
 
     def __repr__(self) -> str:
         return f"User(id='{self.id}', username='{self.username}')"
+
+
+@dataclass
+class AuthProfile:
+    """
+    Authentication profile for credential storage.
+
+    Stores hashed credentials that back a `User` identity without
+    exposing raw passwords to the rest of the system.
+
+    Attributes:
+        id: Unique auth profile identifier
+        user_id: Associated user identifier
+        username: Auth username (mirrors user username)
+        email: Email used for login
+        password_hash: Hashed password string
+        password_salt: Salt used to hash the password
+        created_at: Timestamp when the profile was created
+    """
+
+    id: str
+    user_id: str
+    username: str
+    email: str
+    password_hash: str
+    password_salt: str
+    created_at: datetime = field(default_factory=datetime.now)

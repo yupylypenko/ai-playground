@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Protocol
 
-from src.models import Mission, Objective, User
+from src.models import AuthProfile, Mission, Objective, User
 
 
 class UserRepository(Protocol):
@@ -157,6 +157,50 @@ class ObjectiveRepository(Protocol):
         """
         ...
 
+
+class AuthRepository(Protocol):
+    """
+    Protocol for authentication profile storage.
+
+    Separates credential persistence from user profile data.
+    """
+
+    def save_profile(self, profile: AuthProfile) -> None:
+        """
+        Persist an authentication profile.
+
+        Args:
+            profile: AuthProfile instance
+        """
+        ...
+
+    def get_by_username(self, username: str) -> Optional[AuthProfile]:
+        """
+        Retrieve a profile by username.
+
+        Args:
+            username: Username string
+        """
+        ...
+
+    def get_by_email(self, email: str) -> Optional[AuthProfile]:
+        """
+        Retrieve a profile by email.
+
+        Args:
+            email: Email address
+        """
+        ...
+
+    def get_by_user_id(self, user_id: str) -> Optional[AuthProfile]:
+        """
+        Retrieve a profile by associated user ID.
+
+        Args:
+            user_id: User identifier
+        """
+        ...
+
     def get_objective(self, objective_id: str, mission_id: str) -> Optional[Objective]:
         """
         Retrieve an objective by ID within a mission.
@@ -190,4 +234,3 @@ class ObjectiveRepository(Protocol):
             objective_id: Unique objective identifier
         """
         ...
-

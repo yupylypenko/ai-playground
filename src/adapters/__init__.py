@@ -5,6 +5,7 @@ MongoDB implementations of storage repositories.
 """
 
 from src.adapters.mongodb import (
+    MongoAuthRepository,
     MongoDatabase,
     MongoMissionRepository,
     MongoObjectiveRepository,
@@ -16,5 +17,5 @@ __all__ = [
     "MongoUserRepository",
     "MongoMissionRepository",
     "MongoObjectiveRepository",
+    "MongoAuthRepository",
 ]
-
