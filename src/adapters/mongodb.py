@@ -15,12 +15,7 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 
 from src.cockpit.config import MongoConfig
-from src.cockpit.storage import (
-    MissionRepository,
-    ObjectiveRepository,
-    UserRepository,
-)
-from src.models import Mission, Objective, User
+from src.models import AuthProfile, Mission, Objective, User
 
 logger = logging.getLogger(__name__)
 
@@ -105,8 +100,16 @@ class MongoUserRepository:
             "completed_missions": user.completed_missions,
             "best_times": user.best_times,
             "achievements": user.achievements,
-            "created_at": user.created_at.isoformat() if isinstance(user.created_at, datetime) else user.created_at,
-            "last_login": user.last_login.isoformat() if isinstance(user.last_login, datetime) else user.last_login,
+            "created_at": (
+                user.created_at.isoformat()
+                if isinstance(user.created_at, datetime)
+                else user.created_at
+            ),
+            "last_login": (
+                user.last_login.isoformat()
+                if isinstance(user.last_login, datetime)
+                else user.last_login
+            ),
         }
 
     @staticmethod
@@ -150,6 +153,66 @@ class MongoUserRepository:
             achievements=doc.get("achievements", []),
             created_at=created_at,
             last_login=last_login,
+        )
+
+
+class MongoAuthRepository:
+    """
+    MongoDB implementation of AuthRepository.
+    """
+
+    def __init__(self, db: Database) -> None:
+        self.collection: Collection = db.auth_profiles
+
+    def save_profile(self, profile: AuthProfile) -> None:
+        doc = self._profile_to_doc(profile)
+        self.collection.replace_one({"_id": profile.id}, doc, upsert=True)
+        logger.debug("Saved auth profile for user %s", profile.user_id)
+
+    def get_by_username(self, username: str) -> Optional[AuthProfile]:
+        doc = self.collection.find_one({"username": username})
+        if doc:
+            return self._doc_to_profile(doc)
+        return None
+
+    def get_by_email(self, email: str) -> Optional[AuthProfile]:
+        doc = self.collection.find_one({"email": email})
+        if doc:
+            return self._doc_to_profile(doc)
+        return None
+
+    def get_by_user_id(self, user_id: str) -> Optional[AuthProfile]:
+        doc = self.collection.find_one({"user_id": user_id})
+        if doc:
+            return self._doc_to_profile(doc)
+        return None
+
+    @staticmethod
+    def _profile_to_doc(profile: AuthProfile) -> dict:
+        return {
+            "_id": profile.id,
+            "user_id": profile.user_id,
+            "username": profile.username,
+            "email": profile.email,
+            "password_hash": profile.password_hash,
+            "password_salt": profile.password_salt,
+            "created_at": profile.created_at.isoformat(),
+        }
+
+    @staticmethod
+    def _doc_to_profile(doc: dict) -> AuthProfile:
+        created_at = doc.get("created_at")
+        if isinstance(created_at, str):
+            created_at = datetime.fromisoformat(created_at)
+
+        return AuthProfile(
+            id=doc["_id"],
+            user_id=doc["user_id"],
+            username=doc["username"],
+            email=doc["email"],
+            password_hash=doc["password_hash"],
+            password_salt=doc["password_salt"],
+            created_at=created_at or datetime.now(),
         )
 
 
@@ -253,7 +316,9 @@ class MongoMissionRepository:
                 description=obj_doc["description"],
                 type=obj_doc["type"],
                 target_id=obj_doc.get("target_id"),
-                position=tuple(obj_doc["position"]) if obj_doc.get("position") else None,
+                position=(
+                    tuple(obj_doc["position"]) if obj_doc.get("position") else None
+                ),
                 completed=obj_doc.get("completed", False),
             )
             for obj_doc in doc.get("objectives", [])
@@ -343,16 +408,16 @@ class MongoObjectiveRepository:
             return None
 
         objectives = mission_doc.get("objectives", [])
-        obj_doc = next(
-            (obj for obj in objectives if obj["id"] == objective_id), None
-        )
+        obj_doc = next((obj for obj in objectives if obj["id"] == objective_id), None)
         if obj_doc:
             return Objective(
                 id=obj_doc["id"],
                 description=obj_doc["description"],
                 type=obj_doc["type"],
                 target_id=obj_doc.get("target_id"),
-                position=tuple(obj_doc["position"]) if obj_doc.get("position") else None,
+                position=(
+                    tuple(obj_doc["position"]) if obj_doc.get("position") else None
+                ),
                 completed=obj_doc.get("completed", False),
             )
         return None
@@ -370,7 +435,9 @@ class MongoObjectiveRepository:
                 description=obj_doc["description"],
                 type=obj_doc["type"],
                 target_id=obj_doc.get("target_id"),
-                position=tuple(obj_doc["position"]) if obj_doc.get("position") else None,
+                position=(
+                    tuple(obj_doc["position"]) if obj_doc.get("position") else None
+                ),
                 completed=obj_doc.get("completed", False),
             )
             for obj_doc in objectives
@@ -405,6 +472,7 @@ class MongoDatabase:
         self._user_repo: Optional[MongoUserRepository] = None
         self._mission_repo: Optional[MongoMissionRepository] = None
         self._objective_repo: Optional[MongoObjectiveRepository] = None
+        self._auth_repo: Optional[MongoAuthRepository] = None
 
     def connect(self) -> None:
         """Establish connection to MongoDB."""
@@ -452,6 +520,15 @@ class MongoDatabase:
             raise RuntimeError("Database not connected")
         return self._objective_repo
 
+    @property
+    def auth_repository(self) -> MongoAuthRepository:
+        """Get auth repository instance."""
+        if not self._auth_repo and self.db:
+            self._auth_repo = MongoAuthRepository(self.db)
+        if not self._auth_repo:
+            raise RuntimeError("Database not connected")
+        return self._auth_repo
+
     def __enter__(self):
         """Context manager entry."""
         self.connect()
@@ -460,4 +537,3 @@ class MongoDatabase:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
         self.disconnect()
-

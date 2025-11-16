@@ -1,6 +1,8 @@
 # Cosmic Flight Simulator 🚀🌌
 
-A Python-based cosmic flight simulator that allows you to pilot a spaceship through space with realistic physics, cockpit controls, and stunning 3D visualization.
+A Python-based cosmic flight simulator that allows you to pilot a spaceship
+through space with realistic physics, cockpit controls, and stunning 3D
+visualization.
 
 ## 🌟 Features
 
@@ -65,9 +67,31 @@ python main.py
 python main.py --mission "Mars Mission"
 ```
 
+### Running the HTTP API
+
+The registration API runs independently from the game loop and defaults to
+in-memory storage (no database required):
+
+```bash
+uvicorn src.api.app:app --reload --port 8000
+```
+
+Register a new pilot via `POST /register`:
+
+```bash
+curl -X POST http://localhost:8000/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "nova_test",
+    "email": "nova@example.com",
+    "password": "SuperSafe1",
+    "display_name": "Nova Tester"
+  }'
+```
+
 ## 📁 Project Structure
 
-```
+```text
 ai-playground/
 ├── main.py                 # Entry point
 ├── README.md              # This file
@@ -117,7 +141,8 @@ For detailed documentation, see the `docs/` folder:
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture and design
 - **[datastructure.md](docs/datastructure.md)** - Core data structures and models
 - **[DIAGRAMS.md](docs/DIAGRAMS.md)** - Visual PlantUML diagrams
-- **[engineeringpractices.md](docs/engineeringpractices.md)** - Technical standards and practices
+- **[engineeringpractices.md](docs/engineeringpractices.md)** -
+  Technical standards and practices
 - **[IMPLEMENTATION.md](docs/IMPLEMENTATION.md)** - Implementation roadmap
 - **[REQUIREMENTS.md](docs/REQUIREMENTS.md)** - Detailed requirements specification
 - **[SETUP.md](docs/SETUP.md)** - Setup and installation guide
@@ -126,6 +151,7 @@ For detailed documentation, see the `docs/` folder:
 ## 🎯 Core Requirements
 
 ### Simulator Requirements
+
 - Realistic orbital mechanics calculations
 - Thrust and propulsion system simulation
 - Momentum and velocity conservation
@@ -134,6 +160,7 @@ For detailed documentation, see the `docs/` folder:
 - Multi-body gravitational interactions
 
 ### Cockpit Requirements
+
 - Real-time telemetry display
 - Navigation map and trajectory planning
 - Propulsion control (throttle, direction)
@@ -142,6 +169,7 @@ For detailed documentation, see the `docs/` folder:
 - Auto-pilot capabilities
 
 ### Visualization Requirements
+
 - Real-time 3D rendering of spacecraft
 - Solar system bodies (planets, moons, asteroids)
 - Starfield background
