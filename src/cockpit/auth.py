@@ -134,3 +134,19 @@ class AuthService:
             raise RegistrationError("Password must contain mixed case characters")
         if not any(char.isdigit() for char in password):
             raise RegistrationError("Password must contain at least one digit")
+
+    # Authentication
+    def authenticate(self, username: str, password: str) -> User | None:
+        """
+        Authenticate by username and password.
+
+        Returns:
+            The associated User if credentials are valid; otherwise None.
+        """
+        profile = self.auth_repository.get_by_username(username.strip())
+        if not profile:
+            return None
+        if not self.verify_password(password, profile):
+            return None
+        user = self.user_service.get_user(profile.user_id)
+        return user

@@ -55,6 +55,21 @@ class RegistrationResponse(BaseModel):
         )
 
 
+class LoginRequest(BaseModel):
+    """Incoming payload for /login."""
+
+    username: str = Field(..., min_length=3, max_length=32)
+    password: str = Field(..., min_length=8, max_length=64)
+
+
+class TokenResponse(BaseModel):
+    """Access token returned on successful authentication."""
+
+    access_token: str = Field(description="JWT access token.")
+    token_type: str = Field(default="bearer", description="Token type (RFC6750).")
+    expires_in: int = Field(description="Token lifetime in seconds.")
+
+
 class UserProfileResponse(BaseModel):
     """Response contract for authenticated user profile."""
 

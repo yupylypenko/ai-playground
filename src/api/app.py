@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import os
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Security, status
@@ -17,8 +18,10 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
 from src.api.schemas import (
+    LoginRequest,
     RegistrationRequest,
     RegistrationResponse,
+    TokenResponse,
     UserProfileResponse,
 )
 from src.cockpit.auth import AuthService, RegistrationError
@@ -28,9 +31,10 @@ from src.models import User
 
 logger = logging.getLogger(__name__)
 
-# JWT Configuration
+# Security settings (simple defaults for development)
 SECRET_KEY = os.getenv("API_SECRET_KEY", "dev-secret-key-please-change-in-production")
 ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_MIN", "60"))
 
 # Security scheme for Bearer token
 security = HTTPBearer()
@@ -153,6 +157,49 @@ def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
     def healthcheck() -> dict[str, str]:
         """Return a trivial health status payload."""
         return {"status": "ok"}
+
+    @app.post(
+        "/login",
+        status_code=status.HTTP_200_OK,
+        response_model=TokenResponse,
+        summary="Authenticate and receive an access token",
+        response_description="Bearer token and metadata.",
+    )
+    def login(
+        payload: LoginRequest,
+        service: AuthService = Depends(get_auth_service),
+    ) -> TokenResponse:
+        """Authenticate using username/password and return a JWT access token."""
+        user = service.authenticate(payload.username, payload.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid username or password",
+            )
+
+        expire = datetime.now(tz=timezone.utc) + timedelta(
+            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+        claims = {
+            "sub": user.id,
+            "username": user.username,
+            "exp": int(expire.timestamp()),
+            "iat": int(datetime.now(tz=timezone.utc).timestamp()),
+        }
+        try:
+            token = jwt.encode(claims, SECRET_KEY, algorithm=ALGORITHM)
+        except JWTError as exc:
+            logger.exception("Failed to encode JWT")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Token generation failed",
+            ) from exc
+
+        return TokenResponse(
+            access_token=token,
+            token_type="bearer",
+            expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        )
 
     @app.get(
         "/me",
