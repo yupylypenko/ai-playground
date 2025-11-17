@@ -62,3 +62,32 @@ def test_register_weak_password() -> None:
     response = client.post("/register", json=payload)
     assert response.status_code == 400
     assert "mixed case" in response.json()["detail"]
+
+
+def test_register_value_error_from_user_service() -> None:
+    """Test that ValueError from UserService is caught and returns 400."""
+    # This tests the ValueError exception handler in app.py
+    client = build_test_client()
+
+    # First registration succeeds
+    payload1 = {
+        "username": "testuser",
+        "email": "test1@example.com",
+        "password": "TestPass123",
+        "display_name": "Test User 1",
+    }
+    assert client.post("/register", json=payload1).status_code == 201
+
+    # Second registration with same username should trigger ValueError
+    # from UserService (not RegistrationError from AuthService)
+    # This tests the ValueError exception path in app.py
+    payload2 = {
+        "username": "testuser",  # Duplicate username
+        "email": "test2@example.com",
+        "password": "TestPass123",
+        "display_name": "Test User 2",
+    }
+    response = client.post("/register", json=payload2)
+    assert response.status_code == 400
+    detail = response.json()["detail"].lower()
+    assert "already" in detail or "exists" in detail or "registered" in detail

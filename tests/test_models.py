@@ -162,3 +162,132 @@ class TestObjective:
         assert obj.type == "reach"
         assert obj.target_id == "mars"
         assert obj.completed is False
+
+    def test_objective_repr(self):
+        """Test Objective string representation."""
+        obj_completed = Objective(
+            id="obj-1", description="Task", type="reach", completed=True
+        )
+        obj_incomplete = Objective(
+            id="obj-2", description="Task", type="reach", completed=False
+        )
+
+        assert "✓" in repr(obj_completed)
+        assert "○" in repr(obj_incomplete)
+        assert "obj-1" in repr(obj_completed)
+
+    def test_mission_get_current_objective(self):
+        """Test getting current objective."""
+        mission = Mission(
+            id="m1",
+            name="Test",
+            type="tutorial",
+            difficulty="beginner",
+            description="Test",
+        )
+
+        # No objectives
+        assert mission.get_current_objective() is None
+
+        # Add objectives
+        obj1 = Objective(id="obj-1", description="Task 1", type="reach")
+        obj2 = Objective(id="obj-2", description="Task 2", type="reach")
+        mission.objectives = [obj1, obj2]
+
+        # Current objective index 0
+        current = mission.get_current_objective()
+        assert current is not None
+        assert current.id == "obj-1"
+
+        # Change index
+        mission.current_objective_index = 1
+        current = mission.get_current_objective()
+        assert current is not None
+        assert current.id == "obj-2"
+
+        # Invalid index (too high)
+        mission.current_objective_index = 10
+        assert mission.get_current_objective() is None
+
+        # Invalid index (negative)
+        mission.current_objective_index = -1
+        assert mission.get_current_objective() is None
+
+    def test_mission_repr(self):
+        """Test Mission string representation."""
+        mission = Mission(
+            id="m1",
+            name="Test Mission",
+            type="tutorial",
+            difficulty="beginner",
+            description="Test",
+        )
+
+        repr_str = repr(mission)
+        assert "m1" in repr_str
+        assert "Test Mission" in repr_str
+        assert "not_started" in repr_str
+
+    def test_complete_objective_already_completed(self):
+        """Test completing an already completed objective."""
+        mission = Mission(
+            id="m1",
+            name="Test",
+            type="tutorial",
+            difficulty="beginner",
+            description="Test",
+        )
+
+        obj = Objective(id="obj-1", description="Task", type="reach", completed=True)
+        mission.objectives.append(obj)
+        initial_completed = mission.objectives_completed
+
+        # Try to complete again
+        mission.complete_objective("obj-1")
+
+        # Should not increment
+        assert mission.objectives_completed == initial_completed
+
+    def test_complete_objective_nonexistent(self):
+        """Test completing a non-existent objective."""
+        mission = Mission(
+            id="m1",
+            name="Test",
+            type="tutorial",
+            difficulty="beginner",
+            description="Test",
+        )
+
+        # Should not raise error
+        mission.complete_objective("nonexistent-obj")
+        assert mission.objectives_completed == 0
+
+    def test_user_add_completed_mission_update_best_time(self):
+        """Test adding completed mission updates best time if better."""
+        user = User(
+            id="u1", username="test", email="test@example.com", display_name="Test"
+        )
+
+        # First completion
+        user.add_completed_mission("mission-1", 3600.0)
+        assert user.best_times["mission-1"] == 3600.0
+
+        # Better time
+        user.add_completed_mission("mission-1", 3000.0)
+        assert user.best_times["mission-1"] == 3000.0
+
+        # Worse time (should not update)
+        user.add_completed_mission("mission-1", 4000.0)
+        assert user.best_times["mission-1"] == 3000.0
+
+    def test_user_repr(self):
+        """Test User string representation."""
+        user = User(
+            id="user-123",
+            username="testuser",
+            email="test@example.com",
+            display_name="Test",
+        )
+        repr_str = repr(user)
+        assert "user-123" in repr_str
+        assert "testuser" in repr_str
