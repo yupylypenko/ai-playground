@@ -9,6 +9,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from src.cockpit.auth import RegistrationResult
+from src.models import User
 
 
 class RegistrationRequest(BaseModel):
@@ -67,3 +68,30 @@ class TokenResponse(BaseModel):
     access_token: str = Field(description="JWT access token.")
     token_type: str = Field(default="bearer", description="Token type (RFC6750).")
     expires_in: int = Field(description="Token lifetime in seconds.")
+
+
+class UserProfileResponse(BaseModel):
+    """Response contract for authenticated user profile."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: str = Field(description="User identifier.")
+    username: str = Field(description="Username.")
+    email: EmailStr = Field(description="Email address.")
+    display_name: str = Field(description="Display name.")
+    created_at: datetime = Field(description="Account creation timestamp.")
+    last_login: datetime | None = Field(
+        default=None, description="Last login timestamp."
+    )
+
+    @classmethod
+    def from_user(cls, user: User) -> "UserProfileResponse":
+        """Create response from a User model."""
+        return cls(
+            user_id=user.id,
+            username=user.username,
+            email=user.email,
+            display_name=user.display_name,
+            created_at=user.created_at,
+            last_login=user.last_login,
+        )

@@ -204,11 +204,13 @@ jobs:
             -v \
             --tb=short \
             --cov=src \
+            --cov-config=.coveragerc \
             --cov-report=term-missing \
             --cov-report=xml \
             --cov-report=html \
+            --cov-fail-under=90 \
             --maxfail=5 \
-            -m "not slow" || echo "Some tests failed"
+            -m "not slow"
 
       - name: Run Integration Tests
         if: matrix.test-type == 'integration'
