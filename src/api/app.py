@@ -13,10 +13,18 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import Depends, FastAPI, HTTPException, Security, status
+from fastapi import Depends, FastAPI, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
+from src.api.errors import (
+    APIError,
+    ErrorCode,
+    api_error_handler,
+    generic_exception_handler,
+    http_exception_handler,
+    validation_error_handler,
+)
 from src.api.schemas import (
     LoginRequest,
     RegistrationRequest,
@@ -63,6 +71,15 @@ def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
         description="Public HTTP interface for simulator user management.",
     )
 
+    # Register global exception handlers
+    from fastapi import HTTPException
+    from fastapi.exceptions import RequestValidationError
+
+    app.add_exception_handler(APIError, api_error_handler)
+    app.add_exception_handler(HTTPException, http_exception_handler)
+    app.add_exception_handler(RequestValidationError, validation_error_handler)
+    app.add_exception_handler(Exception, generic_exception_handler)
+
     def get_auth_service() -> AuthService:
         return service
 
@@ -83,7 +100,7 @@ def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
             Authenticated User instance
 
         Raises:
-            HTTPException: If token is invalid, expired, or user not found
+            APIError: If token is invalid, expired, or user not found
         """
         token = credentials.credentials
 
@@ -91,25 +108,25 @@ def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             user_id: str = payload.get("sub")
             if user_id is None:
-                raise HTTPException(
+                raise APIError(
+                    code=ErrorCode.AUTH_INVALID_TOKEN,
+                    message="Invalid authentication credentials",
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid authentication credentials",
-                    headers={"WWW-Authenticate": "Bearer"},
                 )
         except JWTError as exc:
             logger.warning("JWT validation failed: %s", exc)
-            raise HTTPException(
+            raise APIError(
+                code=ErrorCode.AUTH_EXPIRED_TOKEN,
+                message="Invalid or expired token",
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired token",
-                headers={"WWW-Authenticate": "Bearer"},
             ) from exc
 
         user = auth_service.user_service.get_user(user_id)
         if user is None:
-            raise HTTPException(
+            raise APIError(
+                code=ErrorCode.AUTH_USER_NOT_FOUND,
+                message="User not found",
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found",
-                headers={"WWW-Authenticate": "Bearer"},
             )
 
         return user
@@ -137,12 +154,57 @@ def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
                 display_name=payload.display_name,
             )
         except RegistrationError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+            error_message = str(exc)
+            error_code = ErrorCode.VALIDATION_INVALID_FORMAT
+            details = None
+
+            # Map specific registration errors to error codes
+            if "password" in error_message.lower():
+                error_code = ErrorCode.VALIDATION_PASSWORD_POLICY
+                details = {"field": "password", "message": error_message}
+            elif (
+                "username" in error_message.lower()
+                and "already" in error_message.lower()
+            ):
+                error_code = ErrorCode.RESOURCE_ALREADY_EXISTS
+                details = {"field": "username", "value": payload.username}
+            elif (
+                "email" in error_message.lower() and "already" in error_message.lower()
+            ):
+                error_code = ErrorCode.RESOURCE_ALREADY_EXISTS
+                details = {"field": "email", "value": str(payload.email)}
+            elif "username" in error_message.lower():
+                error_code = ErrorCode.VALIDATION_USERNAME_INVALID
+                details = {"field": "username"}
+            elif "email" in error_message.lower():
+                error_code = ErrorCode.VALIDATION_EMAIL_INVALID
+                details = {"field": "email"}
+
+            raise APIError(
+                code=error_code,
+                message=error_message,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                details=details,
             ) from exc
         except ValueError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+            error_message = str(exc)
+            error_code = ErrorCode.VALIDATION_INVALID_FORMAT
+            details = None
+
+            # Map ValueError to appropriate error codes
+            if "already exists" in error_message.lower():
+                if "username" in error_message.lower():
+                    error_code = ErrorCode.RESOURCE_ALREADY_EXISTS
+                    details = {"field": "username", "value": payload.username}
+                elif "email" in error_message.lower():
+                    error_code = ErrorCode.RESOURCE_ALREADY_EXISTS
+                    details = {"field": "email", "value": str(payload.email)}
+
+            raise APIError(
+                code=error_code,
+                message=error_message,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                details=details,
             ) from exc
 
         logger.info("Registered new user %s", result.user.id)
@@ -172,9 +234,10 @@ def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
         """Authenticate using username/password and return a JWT access token."""
         user = service.authenticate(payload.username, payload.password)
         if not user:
-            raise HTTPException(
+            raise APIError(
+                code=ErrorCode.AUTH_INVALID_CREDENTIALS,
+                message="Invalid username or password",
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid username or password",
             )
 
         expire = datetime.now(tz=timezone.utc) + timedelta(
@@ -190,9 +253,10 @@ def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
             token = jwt.encode(claims, SECRET_KEY, algorithm=ALGORITHM)
         except JWTError as exc:
             logger.exception("Failed to encode JWT")
-            raise HTTPException(
+            raise APIError(
+                code=ErrorCode.SERVER_TOKEN_GENERATION_FAILED,
+                message="Token generation failed",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Token generation failed",
             ) from exc
 
         return TokenResponse(

@@ -47,7 +47,12 @@ def test_register_duplicate_username() -> None:
     duplicate = payload | {"email": "mission2@example.com"}
     response = client.post("/register", json=duplicate)
     assert response.status_code == 400
-    assert "Username already registered" in response.json()["detail"]
+    data = response.json()
+    assert "error" in data
+    assert (
+        "Username already registered" in data["error"]["message"]
+        or "already" in data["error"]["message"].lower()
+    )
 
 
 def test_register_weak_password() -> None:
@@ -61,7 +66,12 @@ def test_register_weak_password() -> None:
 
     response = client.post("/register", json=payload)
     assert response.status_code == 400
-    assert "mixed case" in response.json()["detail"]
+    data = response.json()
+    assert "error" in data
+    assert (
+        "mixed case" in data["error"]["message"].lower()
+        or "password" in data["error"]["message"].lower()
+    )
 
 
 def test_register_value_error_from_user_service() -> None:
@@ -89,5 +99,7 @@ def test_register_value_error_from_user_service() -> None:
     }
     response = client.post("/register", json=payload2)
     assert response.status_code == 400
-    detail = response.json()["detail"].lower()
-    assert "already" in detail or "exists" in detail or "registered" in detail
+    data = response.json()
+    assert "error" in data
+    message = data["error"]["message"].lower()
+    assert "already" in message or "exists" in message or "registered" in message

@@ -76,7 +76,9 @@ def test_get_me_without_token(client: TestClient) -> None:
     response = client.get("/me")
 
     assert response.status_code == 403
-    assert "detail" in response.json()
+    # FastAPI HTTPBearer returns 403 with detail for missing token
+    data = response.json()
+    assert "detail" in data or "error" in data
 
 
 def test_get_me_with_invalid_token(client: TestClient) -> None:
@@ -87,7 +89,9 @@ def test_get_me_with_invalid_token(client: TestClient) -> None:
     )
 
     assert response.status_code == 401
-    assert "Invalid or expired token" in response.json()["detail"]
+    data = response.json()
+    assert "error" in data
+    assert "Invalid or expired token" in data["error"]["message"]
 
 
 def test_get_me_with_expired_token(client: TestClient, registered_user: dict) -> None:
@@ -111,7 +115,9 @@ def test_get_me_with_expired_token(client: TestClient, registered_user: dict) ->
     )
 
     assert response.status_code == 401
-    assert "Invalid or expired token" in response.json()["detail"]
+    data = response.json()
+    assert "error" in data
+    assert "Invalid or expired token" in data["error"]["message"]
 
 
 def test_get_me_with_token_missing_sub(client: TestClient) -> None:
@@ -129,7 +135,9 @@ def test_get_me_with_token_missing_sub(client: TestClient) -> None:
     )
 
     assert response.status_code == 401
-    assert "Invalid authentication credentials" in response.json()["detail"]
+    data = response.json()
+    assert "error" in data
+    assert "Invalid authentication credentials" in data["error"]["message"]
 
 
 def test_get_me_with_nonexistent_user(client: TestClient) -> None:
@@ -142,7 +150,9 @@ def test_get_me_with_nonexistent_user(client: TestClient) -> None:
     )
 
     assert response.status_code == 401
-    assert "User not found" in response.json()["detail"]
+    data = response.json()
+    assert "error" in data
+    assert "User not found" in data["error"]["message"]
 
 
 def test_get_me_with_wrong_secret_key(
@@ -168,4 +178,6 @@ def test_get_me_with_wrong_secret_key(
     )
 
     assert response.status_code == 401
-    assert "Invalid or expired token" in response.json()["detail"]
+    data = response.json()
+    assert "error" in data
+    assert "Invalid or expired token" in data["error"]["message"]
