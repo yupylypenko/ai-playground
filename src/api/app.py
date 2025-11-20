@@ -27,14 +27,20 @@ from src.api.errors import (
 )
 from src.api.schemas import (
     LoginRequest,
+    ProjectCreateRequest,
+    ProjectResponse,
     RegistrationRequest,
     RegistrationResponse,
     TokenResponse,
     UserProfileResponse,
 )
 from src.cockpit.auth import AuthService, RegistrationError
-from src.cockpit.memory import InMemoryAuthRepository, InMemoryUserRepository
-from src.cockpit.services import UserService
+from src.cockpit.memory import (
+    InMemoryAuthRepository,
+    InMemoryProjectRepository,
+    InMemoryUserRepository,
+)
+from src.cockpit.services import ProjectService, UserService
 from src.models import User
 
 logger = logging.getLogger(__name__)
@@ -54,6 +60,12 @@ def _build_in_memory_auth_service() -> AuthService:
     auth_repo = InMemoryAuthRepository()
     user_service = UserService(user_repo)
     return AuthService(user_service=user_service, auth_repository=auth_repo)
+
+
+def _build_in_memory_project_service() -> ProjectService:
+    """Create a ProjectService backed by in-memory repository."""
+    project_repo = InMemoryProjectRepository()
+    return ProjectService(project_repository=project_repo)
 
 
 def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
@@ -82,6 +94,10 @@ def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
 
     def get_auth_service() -> AuthService:
         return service
+
+    def get_project_service() -> ProjectService:
+        """Get ProjectService instance."""
+        return _build_in_memory_project_service()
 
     async def get_current_user(
         credentials: HTTPAuthorizationCredentials = Security(security),
@@ -281,6 +297,129 @@ def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
         Requires a valid JWT token in the Authorization header.
         """
         return UserProfileResponse.from_user(current_user)
+
+    @app.post(
+        "/projects",
+        status_code=status.HTTP_201_CREATED,
+        response_model=ProjectResponse,
+        summary="Create a new mission project",
+        response_description="The created project template.",
+        tags=["Projects"],
+    )
+    def create_project(
+        payload: ProjectCreateRequest,
+        current_user: User = Depends(get_current_user),
+        project_service: ProjectService = Depends(get_project_service),
+    ) -> ProjectResponse:
+        """
+        Create a new mission project template.
+
+        Projects are user-created mission configurations that can be saved
+        and later used to generate missions. This endpoint allows authenticated
+        users to create custom mission templates with objectives, constraints,
+        and configuration parameters.
+
+        **Authentication Required**: This endpoint requires a valid JWT token
+        in the Authorization header.
+
+        **Request Body**:
+        - `name`: Project name/title (required, 1-100 characters)
+        - `description`: Project description (required, 1-1000 characters)
+        - `mission_type`: Type of mission - "tutorial", "free_flight", or "challenge" (required)
+        - `difficulty`: Difficulty level - "beginner", "intermediate", or "advanced" (required)
+        - `target_body_id`: Optional target celestial body ID
+        - `start_position`: Initial position (x, y, z) in meters (default: (0, 0, 0))
+        - `max_fuel`: Maximum fuel capacity in liters (default: 1000.0)
+        - `time_limit`: Optional time limit in seconds
+        - `allowed_ship_types`: List of permitted ship type identifiers
+        - `failure_conditions`: List of failure condition descriptions
+        - `objectives`: List of objective templates
+        - `is_public`: Whether project is publicly shareable (default: false)
+
+        **Response**:
+        Returns the created project with a unique project ID and timestamps.
+
+        **Error Codes**:
+        - `VALIDATION_INVALID_FORMAT`: Invalid request data
+        - `VALIDATION_MISSION_TYPE_INVALID`: Invalid mission type
+        - `VALIDATION_DIFFICULTY_INVALID`: Invalid difficulty level
+        - `AUTH_INVALID_TOKEN`: Missing or invalid authentication token
+
+        **Example Request**:
+        ```json
+        {
+          "name": "Mars Exploration Mission",
+          "description": "A challenging mission to reach Mars orbit",
+          "mission_type": "challenge",
+          "difficulty": "intermediate",
+          "target_body_id": "mars",
+          "max_fuel": 1500.0,
+          "time_limit": 3600.0,
+          "objectives": [
+            {
+              "description": "Reach Mars orbit",
+              "type": "reach",
+              "target_id": "mars"
+            }
+          ],
+          "is_public": false
+        }
+        ```
+        """
+        try:
+            # Create project using service
+            project = project_service.create_project(
+                user_id=current_user.id,
+                name=payload.name,
+                description=payload.description,
+                mission_type=payload.mission_type,
+                difficulty=payload.difficulty,
+                target_body_id=payload.target_body_id,
+                start_position=payload.start_position,
+                max_fuel=payload.max_fuel,
+                time_limit=payload.time_limit,
+                allowed_ship_types=payload.allowed_ship_types,
+                failure_conditions=payload.failure_conditions,
+                is_public=payload.is_public,
+            )
+
+            # Add objectives from request
+            for obj_template in payload.objectives:
+                project.add_objective_template(
+                    description=obj_template.description,
+                    obj_type=obj_template.type,
+                    target_id=obj_template.target_id,
+                    position=obj_template.position,
+                )
+
+            # Save project with objectives
+            project_service.update_project(project)
+
+            logger.info("Created project %s for user %s", project.id, current_user.id)
+            return ProjectResponse.from_project(project)
+
+        except ValueError as exc:
+            error_message = str(exc)
+            error_code = ErrorCode.VALIDATION_INVALID_FORMAT
+            details = None
+
+            # Map specific validation errors to error codes
+            if "mission type" in error_message.lower():
+                error_code = ErrorCode.VALIDATION_MISSION_TYPE_INVALID
+                details = {"field": "mission_type", "value": payload.mission_type}
+            elif "difficulty" in error_message.lower():
+                error_code = ErrorCode.VALIDATION_DIFFICULTY_INVALID
+                details = {"field": "difficulty", "value": payload.difficulty}
+            elif "name" in error_message.lower() and "empty" in error_message.lower():
+                error_code = ErrorCode.VALIDATION_INVALID_FORMAT
+                details = {"field": "name", "message": error_message}
+
+            raise APIError(
+                code=error_code,
+                message=error_message,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                details=details,
+            ) from exc
 
     return app
 

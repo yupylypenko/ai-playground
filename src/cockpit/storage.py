@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Protocol
 
-from src.models import AuthProfile, Mission, Objective, User
+from src.models import AuthProfile, Mission, Objective, Project, User
 
 
 class UserRepository(Protocol):
@@ -232,5 +232,63 @@ class AuthRepository(Protocol):
 
         Args:
             objective_id: Unique objective identifier
+        """
+        ...
+
+
+class ProjectRepository(Protocol):
+    """
+    Protocol for project data storage operations.
+
+    Defines the interface for persisting and retrieving user-created
+    mission project templates.
+    """
+
+    def save_project(self, project: Project) -> None:
+        """
+        Save or update a project.
+
+        Args:
+            project: Project instance to save
+        """
+        ...
+
+    def get_project(self, project_id: str) -> Optional[Project]:
+        """
+        Retrieve a project by ID.
+
+        Args:
+            project_id: Unique project identifier
+
+        Returns:
+            Project instance or None if not found
+        """
+        ...
+
+    def list_projects(
+        self,
+        user_id: Optional[str] = None,
+        is_public: Optional[bool] = None,
+        mission_type: Optional[str] = None,
+    ) -> List[Project]:
+        """
+        List projects with optional filtering.
+
+        Args:
+            user_id: Filter by owner user ID
+            is_public: Filter by public visibility
+            mission_type: Filter by mission type
+
+        Returns:
+            List of matching project instances
+        """
+        ...
+
+    def delete_project(self, project_id: str) -> None:
+        """
+        Delete a project by ID.
+
+        Args:
+            project_id: Unique project identifier
         """
         ...

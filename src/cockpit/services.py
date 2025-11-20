@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from src.cockpit.storage import MissionRepository, UserRepository
-from src.models import Mission, User
+from src.cockpit.storage import MissionRepository, ProjectRepository, UserRepository
+from src.models import Mission, Project, User
 
 
 class UserService:
@@ -29,7 +29,11 @@ class UserService:
         self.user_repository = user_repository
 
     def create_user(
-        self, username: str, email: str, display_name: str, user_id: Optional[str] = None
+        self,
+        username: str,
+        email: str,
+        display_name: str,
+        user_id: Optional[str] = None,
     ) -> User:
         """
         Create a new user.
@@ -53,6 +57,7 @@ class UserService:
 
         if not user_id:
             import uuid
+
             user_id = f"user-{uuid.uuid4().hex[:8]}"
 
         user = User(
@@ -125,6 +130,7 @@ class MissionService:
         """
         if not mission_id:
             import uuid
+
             mission_id = f"mission-{uuid.uuid4().hex[:8]}"
 
         mission = Mission(
@@ -173,3 +179,183 @@ class MissionService:
         """
         self.mission_repository.save_mission(mission)
 
+
+class ProjectService:
+    """
+    Service for project management operations.
+
+    Coordinates project operations with storage repositories.
+    Projects are user-created mission templates that can be saved
+    and later used to generate missions.
+    """
+
+    def __init__(self, project_repository: ProjectRepository) -> None:
+        """
+        Initialize project service.
+
+        Args:
+            project_repository: Project repository implementation
+        """
+        self.project_repository = project_repository
+
+    def create_project(
+        self,
+        user_id: str,
+        name: str,
+        description: str,
+        mission_type: str,
+        difficulty: str,
+        project_id: Optional[str] = None,
+        target_body_id: Optional[str] = None,
+        start_position: tuple[float, float, float] = (0.0, 0.0, 0.0),
+        max_fuel: float = 1000.0,
+        time_limit: Optional[float] = None,
+        allowed_ship_types: Optional[List[str]] = None,
+        failure_conditions: Optional[List[str]] = None,
+        is_public: bool = False,
+    ) -> Project:
+        """
+        Create a new project.
+
+        Args:
+            user_id: Owner user ID
+            name: Project name
+            description: Project description
+            mission_type: Mission type ("tutorial", "free_flight", "challenge")
+            difficulty: Difficulty level ("beginner", "intermediate", "advanced")
+            project_id: Optional project ID (generated if not provided)
+            target_body_id: Optional target celestial body ID
+            start_position: Initial position (x, y, z) in meters
+            max_fuel: Maximum fuel capacity in liters
+            time_limit: Optional time limit in seconds
+            allowed_ship_types: List of permitted ship type identifiers
+            failure_conditions: List of failure condition descriptions
+            is_public: Whether project is publicly shareable
+
+        Returns:
+            Created project instance
+
+        Raises:
+            ValueError: If project name is empty or invalid
+        """
+        if not name or not name.strip():
+            raise ValueError("Project name cannot be empty")
+
+        if mission_type not in ("tutorial", "free_flight", "challenge"):
+            raise ValueError(
+                f"Invalid mission type: {mission_type}. "
+                "Must be one of: tutorial, free_flight, challenge"
+            )
+
+        if difficulty not in ("beginner", "intermediate", "advanced"):
+            raise ValueError(
+                f"Invalid difficulty: {difficulty}. "
+                "Must be one of: beginner, intermediate, advanced"
+            )
+
+        if not project_id:
+            import uuid
+
+            project_id = f"project-{uuid.uuid4().hex[:8]}"
+
+        project = Project(
+            id=project_id,
+            user_id=user_id,
+            name=name.strip(),
+            description=description,
+            mission_type=mission_type,
+            difficulty=difficulty,
+            target_body_id=target_body_id,
+            start_position=start_position,
+            max_fuel=max_fuel,
+            time_limit=time_limit,
+            allowed_ship_types=allowed_ship_types or [],
+            failure_conditions=failure_conditions or [],
+            is_public=is_public,
+        )
+        self.project_repository.save_project(project)
+        return project
+
+    def get_project(self, project_id: str) -> Optional[Project]:
+        """
+        Get project by ID.
+
+        Args:
+            project_id: Project ID
+
+        Returns:
+            Project instance or None
+        """
+        return self.project_repository.get_project(project_id)
+
+    def list_user_projects(
+        self,
+        user_id: str,
+        mission_type: Optional[str] = None,
+        is_public: Optional[bool] = None,
+    ) -> List[Project]:
+        """
+        List projects for a user.
+
+        Args:
+            user_id: User ID
+            mission_type: Optional mission type filter
+            is_public: Optional public visibility filter
+
+        Returns:
+            List of project instances
+        """
+        return self.project_repository.list_projects(
+            user_id=user_id, mission_type=mission_type, is_public=is_public
+        )
+
+    def list_public_projects(self, mission_type: Optional[str] = None) -> List[Project]:
+        """
+        List publicly available projects.
+
+        Args:
+            mission_type: Optional mission type filter
+
+        Returns:
+            List of public project instances
+        """
+        return self.project_repository.list_projects(
+            user_id=None, is_public=True, mission_type=mission_type
+        )
+
+    def update_project(self, project: Project) -> None:
+        """
+        Update project.
+
+        Args:
+            project: Project instance to update
+
+        Raises:
+            ValueError: If project name is empty or invalid
+        """
+        if not project.name or not project.name.strip():
+            raise ValueError("Project name cannot be empty")
+
+        if project.mission_type not in ("tutorial", "free_flight", "challenge"):
+            raise ValueError(
+                f"Invalid mission type: {project.mission_type}. "
+                "Must be one of: tutorial, free_flight, challenge"
+            )
+
+        if project.difficulty not in ("beginner", "intermediate", "advanced"):
+            raise ValueError(
+                f"Invalid difficulty: {project.difficulty}. "
+                "Must be one of: beginner, intermediate, advanced"
+            )
+
+        project.update_metadata()
+        self.project_repository.save_project(project)
+
+    def delete_project(self, project_id: str) -> None:
+        """
+        Delete a project.
+
+        Args:
+            project_id: Project ID
+        """
+        self.project_repository.delete_project(project_id)
