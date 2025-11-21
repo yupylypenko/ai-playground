@@ -17,6 +17,7 @@ from fastapi import Depends, FastAPI, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
+from src.api.error_helpers import create_validation_api_error
 from src.api.errors import (
     APIError,
     ErrorCode,
@@ -27,6 +28,8 @@ from src.api.errors import (
 )
 from src.api.schemas import (
     LoginRequest,
+    MissionCreateRequest,
+    MissionResponse,
     ProjectCreateRequest,
     ProjectResponse,
     RegistrationRequest,
@@ -37,11 +40,12 @@ from src.api.schemas import (
 from src.cockpit.auth import AuthService, RegistrationError
 from src.cockpit.memory import (
     InMemoryAuthRepository,
+    InMemoryMissionRepository,
     InMemoryProjectRepository,
     InMemoryUserRepository,
 )
-from src.cockpit.services import ProjectService, UserService
-from src.models import User
+from src.cockpit.services import MissionService, ProjectService, UserService
+from src.models import Objective, User
 
 logger = logging.getLogger(__name__)
 
@@ -62,10 +66,35 @@ def _build_in_memory_auth_service() -> AuthService:
     return AuthService(user_service=user_service, auth_repository=auth_repo)
 
 
+# Shared repository instances for dependency injection
+_shared_project_repo: Optional[InMemoryProjectRepository] = None
+_shared_mission_repo: Optional[InMemoryMissionRepository] = None
+
+
+def _get_shared_project_repo() -> InMemoryProjectRepository:
+    """Get or create shared project repository instance."""
+    global _shared_project_repo
+    if _shared_project_repo is None:
+        _shared_project_repo = InMemoryProjectRepository()
+    return _shared_project_repo
+
+
+def _get_shared_mission_repo() -> InMemoryMissionRepository:
+    """Get or create shared mission repository instance."""
+    global _shared_mission_repo
+    if _shared_mission_repo is None:
+        _shared_mission_repo = InMemoryMissionRepository()
+    return _shared_mission_repo
+
+
 def _build_in_memory_project_service() -> ProjectService:
     """Create a ProjectService backed by in-memory repository."""
-    project_repo = InMemoryProjectRepository()
-    return ProjectService(project_repository=project_repo)
+    return ProjectService(project_repository=_get_shared_project_repo())
+
+
+def _build_in_memory_mission_service() -> MissionService:
+    """Create a MissionService backed by in-memory repository."""
+    return MissionService(mission_repository=_get_shared_mission_repo())
 
 
 def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
@@ -98,6 +127,15 @@ def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
     def get_project_service() -> ProjectService:
         """Get ProjectService instance."""
         return _build_in_memory_project_service()
+
+    def get_mission_service() -> MissionService:
+        """Get MissionService instance."""
+        return _build_in_memory_mission_service()
+
+    def get_project_service_for_mission() -> ProjectService:
+        """Get ProjectService instance for mission creation from projects."""
+        # Use shared repository to ensure projects are accessible
+        return ProjectService(project_repository=_get_shared_project_repo())
 
     async def get_current_user(
         credentials: HTTPAuthorizationCredentials = Security(security),
@@ -419,6 +457,169 @@ def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
                 message=error_message,
                 status_code=status.HTTP_400_BAD_REQUEST,
                 details=details,
+            ) from exc
+
+    @app.post(
+        "/missions",
+        status_code=status.HTTP_201_CREATED,
+        response_model=MissionResponse,
+        summary="Create a new mission",
+        response_description="The created mission instance.",
+        tags=["Missions"],
+    )
+    def create_mission(
+        payload: MissionCreateRequest,
+        current_user: User = Depends(get_current_user),
+        mission_service: MissionService = Depends(get_mission_service),
+        project_service: ProjectService = Depends(get_project_service_for_mission),
+    ) -> MissionResponse:
+        """
+        Create a new mission instance.
+
+        Missions are executable mission instances that can be created from scratch
+        or from a project template. This endpoint allows authenticated users to
+        create missions with objectives, constraints, and configuration parameters.
+
+        **Authentication Required**: This endpoint requires a valid JWT token
+        in the Authorization header.
+
+        **Creating from Project Template**:
+        If `project_id` is provided, the mission will be created from the project
+        template. All other fields (except `name` which can be overridden) will
+        be inherited from the project. The `objectives` field will be ignored
+        when using a project template.
+
+        **Creating from Scratch**:
+        If `project_id` is not provided, the mission will be created with the
+        provided fields. All fields are optional except `name`, `description`,
+        `mission_type`, and `difficulty`.
+
+        **Request Body**:
+        - `name`: Mission name/title (required, 1-100 characters)
+        - `description`: Mission description (required, 1-1000 characters)
+        - `mission_type`: Type of mission - "tutorial", "free_flight", or "challenge" (required)
+        - `difficulty`: Difficulty level - "beginner", "intermediate", or "advanced" (required)
+        - `project_id`: Optional project template ID to create mission from
+        - `target_body_id`: Optional target celestial body ID
+        - `start_position`: Initial position (x, y, z) in meters (default: (0, 0, 0))
+        - `max_fuel`: Maximum fuel capacity in liters (default: 1000.0)
+        - `time_limit`: Optional time limit in seconds
+        - `allowed_ship_types`: List of permitted ship type identifiers
+        - `failure_conditions`: List of failure condition descriptions
+        - `objectives`: List of mission objectives (ignored if project_id provided)
+
+        **Response**:
+        Returns the created mission with a unique mission ID and initial status.
+
+        **Error Codes**:
+        - `VALIDATION_INVALID_FORMAT`: Invalid request data
+        - `VALIDATION_MISSION_TYPE_INVALID`: Invalid mission type
+        - `VALIDATION_DIFFICULTY_INVALID`: Invalid difficulty level
+        - `RESOURCE_NOT_FOUND`: Project template not found (if project_id provided)
+        - `AUTH_INVALID_TOKEN`: Missing or invalid authentication token
+
+        **Example Request (from scratch)**:
+        ```json
+        {
+          "name": "Mars Landing Mission",
+          "description": "Land safely on Mars surface",
+          "mission_type": "challenge",
+          "difficulty": "intermediate",
+          "target_body_id": "mars",
+          "max_fuel": 1500.0,
+          "objectives": [
+            {
+              "description": "Reach Mars orbit",
+              "type": "reach",
+              "target_id": "mars"
+            }
+          ]
+        }
+        ```
+
+        **Example Request (from project)**:
+        ```json
+        {
+          "name": "My Mars Mission",
+          "description": "Custom mission",
+          "mission_type": "challenge",
+          "difficulty": "intermediate",
+          "project_id": "project-abc123"
+        }
+        ```
+        """
+        try:
+            # Check if creating from project template
+            if payload.project_id:
+                project = project_service.get_project(payload.project_id)
+                if not project:
+                    raise APIError(
+                        code=ErrorCode.RESOURCE_NOT_FOUND,
+                        message=f"Project template '{payload.project_id}' not found",
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        details={"field": "project_id", "value": payload.project_id},
+                    )
+
+                # Create mission from project template
+                mission = mission_service.create_mission_from_project(
+                    project=project,
+                    name_override=payload.name,
+                )
+            else:
+                # Create mission from scratch
+                import uuid
+
+                # Convert objective requests to Objective objects
+                objectives = []
+                for idx, obj_req in enumerate(payload.objectives):
+                    obj_id = f"obj-{uuid.uuid4().hex[:8]}"
+                    objective = Objective(
+                        id=obj_id,
+                        description=obj_req.description,
+                        type=obj_req.type,
+                        target_id=obj_req.target_id,
+                        position=obj_req.position,
+                        completed=False,
+                    )
+                    objectives.append(objective)
+
+                mission = mission_service.create_mission(
+                    name=payload.name,
+                    mission_type=payload.mission_type,
+                    difficulty=payload.difficulty,
+                    description=payload.description,
+                    target_body_id=payload.target_body_id,
+                    start_position=payload.start_position,
+                    max_fuel=payload.max_fuel,
+                    time_limit=payload.time_limit,
+                    allowed_ship_types=payload.allowed_ship_types,
+                    failure_conditions=payload.failure_conditions,
+                    objectives=objectives,
+                )
+
+            logger.info("Created mission %s for user %s", mission.id, current_user.id)
+            return MissionResponse.from_mission(mission)
+
+        except ValueError as exc:
+            # Use helper function for cleaner error mapping
+            raise create_validation_api_error(
+                exc,
+                field_name=(
+                    "mission_type"
+                    if "mission type" in str(exc).lower()
+                    else "difficulty"
+                    if "difficulty" in str(exc).lower()
+                    else "name"
+                ),
+                field_value=(
+                    payload.mission_type
+                    if "mission type" in str(exc).lower()
+                    else (
+                        payload.difficulty
+                        if "difficulty" in str(exc).lower()
+                        else payload.name
+                    )
+                ),
             ) from exc
 
     return app

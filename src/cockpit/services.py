@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import List, Optional
 
 from src.cockpit.storage import MissionRepository, ProjectRepository, UserRepository
-from src.models import Mission, Project, User
+from src.models import Mission, Objective, Project, User
 
 
 class UserService:
@@ -114,6 +114,13 @@ class MissionService:
         difficulty: str,
         description: str,
         mission_id: Optional[str] = None,
+        target_body_id: Optional[str] = None,
+        start_position: tuple[float, float, float] = (0.0, 0.0, 0.0),
+        max_fuel: float = 1000.0,
+        time_limit: Optional[float] = None,
+        allowed_ship_types: Optional[List[str]] = None,
+        failure_conditions: Optional[List[str]] = None,
+        objectives: Optional[List[Objective]] = None,
     ) -> Mission:
         """
         Create a new mission.
@@ -124,10 +131,35 @@ class MissionService:
             difficulty: Difficulty level
             description: Mission description
             mission_id: Optional mission ID (generated if not provided)
+            target_body_id: Optional target celestial body ID
+            start_position: Initial position (x, y, z) in meters
+            max_fuel: Maximum fuel capacity in liters
+            time_limit: Optional time limit in seconds
+            allowed_ship_types: List of permitted ship type identifiers
+            failure_conditions: List of failure condition descriptions
+            objectives: List of mission objectives
 
         Returns:
             Created mission instance
+
+        Raises:
+            ValueError: If mission name is empty or invalid type/difficulty
         """
+        if not name or not name.strip():
+            raise ValueError("Mission name cannot be empty")
+
+        if mission_type not in ("tutorial", "free_flight", "challenge"):
+            raise ValueError(
+                f"Invalid mission type: {mission_type}. "
+                "Must be one of: tutorial, free_flight, challenge"
+            )
+
+        if difficulty not in ("beginner", "intermediate", "advanced"):
+            raise ValueError(
+                f"Invalid difficulty: {difficulty}. "
+                "Must be one of: beginner, intermediate, advanced"
+            )
+
         if not mission_id:
             import uuid
 
@@ -135,13 +167,72 @@ class MissionService:
 
         mission = Mission(
             id=mission_id,
-            name=name,
+            name=name.strip(),
             type=mission_type,
             difficulty=difficulty,
             description=description,
+            target_body_id=target_body_id,
+            start_position=start_position,
+            max_fuel=max_fuel,
+            time_limit=time_limit,
+            allowed_ship_types=allowed_ship_types or [],
+            failure_conditions=failure_conditions or [],
+            objectives=objectives or [],
         )
         self.mission_repository.save_mission(mission)
         return mission
+
+    def create_mission_from_project(
+        self,
+        project: Project,
+        mission_id: Optional[str] = None,
+        name_override: Optional[str] = None,
+    ) -> Mission:
+        """
+        Create a mission from a project template.
+
+        Args:
+            project: Project template to create mission from
+            mission_id: Optional mission ID (generated if not provided)
+            name_override: Optional name override (uses project name if not provided)
+
+        Returns:
+            Created mission instance
+        """
+        import uuid
+
+        # Convert project objectives to mission objectives
+        objectives = []
+        for idx, obj_template in enumerate(project.objectives):
+            obj_id = (
+                f"obj-{uuid.uuid4().hex[:8]}"
+                if not mission_id
+                else f"{mission_id}-obj-{idx}"
+            )
+            objective = Objective(
+                id=obj_id,
+                description=obj_template.get("description", ""),
+                type=obj_template.get("type", "reach"),
+                target_id=obj_template.get("target_id"),
+                position=obj_template.get("position"),
+                completed=False,
+            )
+            objectives.append(objective)
+
+        return self.create_mission(
+            name=name_override or project.name,
+            mission_type=project.mission_type,
+            difficulty=project.difficulty,
+            description=project.description,
+            mission_id=mission_id,
+            target_body_id=project.target_body_id,
+            start_position=project.start_position,
+            max_fuel=project.max_fuel,
+            time_limit=project.time_limit,
+            allowed_ship_types=project.allowed_ship_types,
+            failure_conditions=project.failure_conditions,
+            objectives=objectives,
+        )
 
     def get_mission(self, mission_id: str) -> Optional[Mission]:
         """

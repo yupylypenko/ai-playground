@@ -10,7 +10,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from src.cockpit.auth import RegistrationResult
-from src.models import Project, User
+from src.models import Mission, Project, User
 
 
 class RegistrationRequest(BaseModel):
@@ -228,4 +228,154 @@ class ProjectResponse(BaseModel):
             is_public=project.is_public,
             created_at=project.created_at,
             updated_at=project.updated_at,
+        )
+
+
+class ObjectiveCreateRequest(BaseModel):
+    """Request payload for creating an objective."""
+
+    description: str = Field(
+        ..., min_length=1, max_length=500, description="Objective description."
+    )
+    type: str = Field(
+        default="reach",
+        description="Objective type: reach, collect, maintain, avoid.",
+    )
+    target_id: str | None = Field(
+        default=None, description="Optional target body/ship ID."
+    )
+    position: tuple[float, float, float] | None = Field(
+        default=None, description="Optional target position (x, y, z)."
+    )
+
+
+class MissionCreateRequest(BaseModel):
+    """Request payload for creating a new mission."""
+
+    name: str = Field(
+        ...,
+        min_length=1,
+        max_length=100,
+        description="Mission name/title.",
+        examples=["Mars Landing Mission"],
+    )
+    description: str = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="Mission description.",
+        examples=["Land safely on Mars surface."],
+    )
+    mission_type: str = Field(
+        ...,
+        description="Mission type: tutorial, free_flight, challenge.",
+        examples=["challenge"],
+    )
+    difficulty: str = Field(
+        ...,
+        description="Difficulty level: beginner, intermediate, advanced.",
+        examples=["intermediate"],
+    )
+    project_id: str | None = Field(
+        default=None,
+        description="Optional project template ID to create mission from.",
+        examples=["project-abc123"],
+    )
+    target_body_id: str | None = Field(
+        default=None,
+        description="Optional target celestial body ID.",
+        examples=["mars"],
+    )
+    start_position: tuple[float, float, float] = Field(
+        default=(0.0, 0.0, 0.0),
+        description="Initial position (x, y, z) in meters.",
+        examples=[(0.0, 0.0, 0.0)],
+    )
+    max_fuel: float = Field(
+        default=1000.0,
+        ge=0.0,
+        description="Maximum fuel capacity in liters.",
+        examples=[1500.0],
+    )
+    time_limit: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Optional time limit in seconds.",
+        examples=[3600.0],
+    )
+    allowed_ship_types: list[str] = Field(
+        default_factory=list,
+        description="List of permitted ship type identifiers.",
+        examples=[["explorer", "cargo"]],
+    )
+    failure_conditions: list[str] = Field(
+        default_factory=list,
+        description="List of failure condition descriptions.",
+        examples=["Out of fuel", "Collision detected"],
+    )
+    objectives: list[ObjectiveCreateRequest] = Field(
+        default_factory=list,
+        description="List of mission objectives. Ignored if project_id is provided.",
+    )
+
+
+class MissionResponse(BaseModel):
+    """Response contract for mission data."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    mission_id: str = Field(description="Unique mission identifier.")
+    name: str = Field(description="Mission name.")
+    description: str = Field(description="Mission description.")
+    mission_type: str = Field(description="Mission type.")
+    difficulty: str = Field(description="Difficulty level.")
+    status: str = Field(description="Mission status.")
+    target_body_id: str | None = Field(description="Optional target celestial body ID.")
+    start_position: tuple[float, float, float] = Field(
+        description="Initial position (x, y, z)."
+    )
+    max_fuel: float = Field(description="Maximum fuel capacity in liters.")
+    time_limit: float | None = Field(description="Optional time limit in seconds.")
+    allowed_ship_types: list[str] = Field(description="List of permitted ship types.")
+    failure_conditions: list[str] = Field(description="List of failure conditions.")
+    objectives: list[dict[str, Any]] = Field(description="List of mission objectives.")
+    objectives_completed: int = Field(description="Number of completed objectives.")
+    elapsed_time: float = Field(description="Time elapsed in seconds.")
+    distance_traveled: float = Field(description="Distance traveled in meters.")
+    fuel_consumed: float = Field(description="Fuel consumed in liters.")
+    estimated_time: float = Field(description="Estimated duration in seconds.")
+
+    @classmethod
+    def from_mission(cls, mission: Mission) -> "MissionResponse":
+        """Create response from a Mission model."""
+        objectives_data = [
+            {
+                "id": obj.id,
+                "description": obj.description,
+                "type": obj.type,
+                "target_id": obj.target_id,
+                "position": obj.position,
+                "completed": obj.completed,
+            }
+            for obj in mission.objectives
+        ]
+        return cls(
+            mission_id=mission.id,
+            name=mission.name,
+            description=mission.description,
+            mission_type=mission.type,
+            difficulty=mission.difficulty,
+            status=mission.status,
+            target_body_id=mission.target_body_id,
+            start_position=mission.start_position,
+            max_fuel=mission.max_fuel,
+            time_limit=mission.time_limit,
+            allowed_ship_types=mission.allowed_ship_types,
+            failure_conditions=mission.failure_conditions,
+            objectives=objectives_data,
+            objectives_completed=mission.objectives_completed,
+            elapsed_time=mission.elapsed_time,
+            distance_traveled=mission.distance_traveled,
+            fuel_consumed=mission.fuel_consumed,
+            estimated_time=mission.estimated_time,
         )

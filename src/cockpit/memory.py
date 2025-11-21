@@ -10,8 +10,13 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Dict, List, Optional
 
-from src.cockpit.storage import AuthRepository, ProjectRepository, UserRepository
-from src.models import AuthProfile, Project, User
+from src.cockpit.storage import (
+    AuthRepository,
+    MissionRepository,
+    ProjectRepository,
+    UserRepository,
+)
+from src.models import AuthProfile, Mission, Project, User
 
 
 class InMemoryUserRepository(UserRepository):
@@ -114,3 +119,39 @@ class InMemoryProjectRepository(ProjectRepository):
     def delete_project(self, project_id: str) -> None:
         """Delete a project by ID."""
         self._projects.pop(project_id, None)
+
+
+class InMemoryMissionRepository(MissionRepository):
+    """Simple in-memory mission storage."""
+
+    def __init__(self) -> None:
+        self._missions: Dict[str, Mission] = {}
+
+    def save_mission(self, mission: Mission) -> None:
+        """Save or update a mission."""
+        self._missions[mission.id] = deepcopy(mission)
+
+    def get_mission(self, mission_id: str) -> Optional[Mission]:
+        """Retrieve a mission by ID."""
+        mission = self._missions.get(mission_id)
+        return deepcopy(mission) if mission else None
+
+    def list_missions(
+        self,
+        user_id: Optional[str] = None,
+        status: Optional[str] = None,
+        mission_type: Optional[str] = None,
+    ) -> List[Mission]:
+        """List missions with optional filtering."""
+        results = []
+        for mission in self._missions.values():
+            if status is not None and mission.status != status:
+                continue
+            if mission_type is not None and mission.type != mission_type:
+                continue
+            results.append(deepcopy(mission))
+        return results
+
+    def delete_mission(self, mission_id: str) -> None:
+        """Delete a mission by ID."""
+        self._missions.pop(mission_id, None)
