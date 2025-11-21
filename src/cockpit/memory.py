@@ -10,8 +10,8 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Dict, List, Optional
 
-from src.cockpit.storage import AuthRepository, UserRepository
-from src.models import AuthProfile, User
+from src.cockpit.storage import AuthRepository, ProjectRepository, UserRepository
+from src.models import AuthProfile, Project, User
 
 
 class InMemoryUserRepository(UserRepository):
@@ -76,3 +76,41 @@ class InMemoryAuthRepository(AuthRepository):
     def get_by_user_id(self, user_id: str) -> Optional[AuthProfile]:
         profile_id = self._profiles_by_user_id.get(user_id)
         return self._get(profile_id) if profile_id else None
+
+
+class InMemoryProjectRepository(ProjectRepository):
+    """Simple in-memory project storage."""
+
+    def __init__(self) -> None:
+        self._projects: Dict[str, Project] = {}
+
+    def save_project(self, project: Project) -> None:
+        """Save or update a project."""
+        self._projects[project.id] = deepcopy(project)
+
+    def get_project(self, project_id: str) -> Optional[Project]:
+        """Retrieve a project by ID."""
+        project = self._projects.get(project_id)
+        return deepcopy(project) if project else None
+
+    def list_projects(
+        self,
+        user_id: Optional[str] = None,
+        is_public: Optional[bool] = None,
+        mission_type: Optional[str] = None,
+    ) -> List[Project]:
+        """List projects with optional filtering."""
+        results = []
+        for project in self._projects.values():
+            if user_id is not None and project.user_id != user_id:
+                continue
+            if is_public is not None and project.is_public != is_public:
+                continue
+            if mission_type is not None and project.mission_type != mission_type:
+                continue
+            results.append(deepcopy(project))
+        return results
+
+    def delete_project(self, project_id: str) -> None:
+        """Delete a project by ID."""
+        self._projects.pop(project_id, None)

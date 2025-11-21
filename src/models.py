@@ -317,3 +317,112 @@ class AuthProfile:
     password_hash: str
     password_salt: str
     created_at: datetime = field(default_factory=datetime.now)
+
+
+@dataclass
+class Project:
+    """
+    User-created mission project template.
+
+    Represents a customizable mission configuration that users can create,
+    save, and later use to generate missions. Projects serve as templates
+    that define mission parameters, objectives, and constraints.
+
+    Attributes:
+        id: Unique project identifier
+        user_id: Owner user identifier
+        name: Project name/title
+        description: Project description
+        mission_type: Type of mission ("tutorial", "free_flight", "challenge")
+        difficulty: Difficulty level ("beginner", "intermediate", "advanced")
+        target_body_id: Optional target celestial body ID
+        start_position: Initial position (x, y, z) in meters
+        max_fuel: Maximum fuel capacity in liters
+        time_limit: Optional time limit in seconds
+        allowed_ship_types: List of permitted ship type identifiers
+        failure_conditions: List of failure condition descriptions
+        objectives: List of objective templates
+        is_public: Whether project is publicly shareable
+        created_at: Project creation timestamp
+        updated_at: Last update timestamp
+
+    Examples:
+        >>> project = Project(
+        ...     id="proj-001",
+        ...     user_id="user-123",
+        ...     name="Mars Exploration",
+        ...     description="Journey to Mars",
+        ...     mission_type="challenge",
+        ...     difficulty="intermediate"
+        ... )
+        >>> project.add_objective_template("Reach Mars orbit")
+    """
+
+    id: str
+    user_id: str
+    name: str
+    description: str
+    mission_type: str  # "tutorial", "free_flight", "challenge"
+    difficulty: str  # "beginner", "intermediate", "advanced"
+
+    # Mission configuration
+    target_body_id: Optional[str] = None
+    start_position: tuple[float, float, float] = (0.0, 0.0, 0.0)  # (x, y, z)
+    max_fuel: float = 1000.0  # L
+    time_limit: Optional[float] = None  # seconds
+    allowed_ship_types: List[str] = field(default_factory=list)
+    failure_conditions: List[str] = field(default_factory=list)
+
+    # Objective templates (stored as dictionaries for flexibility)
+    objectives: List[Dict[str, any]] = field(default_factory=list)
+
+    # Visibility
+    is_public: bool = False
+
+    # Metadata
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
+
+    def add_objective_template(
+        self,
+        description: str,
+        obj_type: str = "reach",
+        target_id: Optional[str] = None,
+        position: Optional[tuple[float, float, float]] = None,
+    ) -> None:
+        """
+        Add an objective template to the project.
+
+        Args:
+            description: Objective description
+            obj_type: Objective type ("reach", "collect", "maintain", "avoid")
+            target_id: Optional target body/ship ID
+            position: Optional target position (x, y, z)
+        """
+        objective = {
+            "description": description,
+            "type": obj_type,
+            "target_id": target_id,
+            "position": position,
+        }
+        self.objectives.append(objective)
+        self.updated_at = datetime.now()
+
+    def update_metadata(
+        self, name: Optional[str] = None, description: Optional[str] = None
+    ) -> None:
+        """
+        Update project metadata.
+
+        Args:
+            name: Optional new name
+            description: Optional new description
+        """
+        if name is not None:
+            self.name = name
+        if description is not None:
+            self.description = description
+        self.updated_at = datetime.now()
+
+    def __repr__(self) -> str:
+        return f"Project(id='{self.id}', name='{self.name}', user_id='{self.user_id}')"
