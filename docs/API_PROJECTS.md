@@ -9,6 +9,87 @@ simulation missions.
 
 ## Endpoints
 
+### GET /projects
+
+List projects with optional filtering.
+
+**Authentication**: Required (Bearer token)
+
+**Query Parameters**:
+- `user_id` (string, optional): Filter by owner user ID. If not provided,
+  defaults to the authenticated user's ID.
+- `is_public` (boolean, optional): Filter by public visibility.
+  - `true`: Only return public projects (from all users if `user_id` not
+    provided)
+  - `false`: Only return private projects
+  - Not provided: Return both public and private projects
+- `mission_type` (string, optional): Filter by mission type.
+  Valid values: `tutorial`, `free_flight`, `challenge`
+
+**Response** (200 OK):
+
+```json
+{
+  "projects": [
+    {
+      "project_id": "project-abc123",
+      "user_id": "user-123",
+      "name": "Mars Exploration Mission",
+      "description": "A challenging mission to reach Mars orbit",
+      "mission_type": "challenge",
+      "difficulty": "intermediate",
+      "target_body_id": "mars",
+      "start_position": [0.0, 0.0, 0.0],
+      "max_fuel": 1500.0,
+      "time_limit": 3600.0,
+      "allowed_ship_types": ["explorer", "cargo"],
+      "failure_conditions": ["Out of fuel", "Collision detected"],
+      "objectives": [
+        {
+          "description": "Reach Mars orbit",
+          "type": "reach",
+          "target_id": "mars",
+          "position": [100.0, 200.0, 300.0]
+        }
+      ],
+      "is_public": false,
+      "created_at": "2024-01-15T10:30:00Z",
+      "updated_at": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+
+**Error Responses**:
+
+- `400 Bad Request`: Invalid query parameters
+  - `VALIDATION_MISSION_TYPE_INVALID`: Invalid mission type filter
+
+- `401 Unauthorized`: Authentication required or invalid token
+  - `AUTH_INVALID_TOKEN`: Invalid or missing token
+  - `AUTH_EXPIRED_TOKEN`: Token has expired
+
+**Examples**:
+
+```bash
+# List current user's projects
+curl -X GET "http://localhost:8000/projects" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# List only public projects
+curl -X GET "http://localhost:8000/projects?is_public=true" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# List challenge-type projects
+curl -X GET "http://localhost:8000/projects?mission_type=challenge" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# List public challenge projects
+curl -X GET "http://localhost:8000/projects?is_public=true&mission_type=challenge" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
 ### POST /projects
 
 Create a new mission project template.
