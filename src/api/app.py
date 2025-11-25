@@ -32,6 +32,7 @@ from src.api.schemas import (
     MissionResponse,
     ProjectCreateRequest,
     ProjectResponse,
+    ProjectsListResponse,
     RegistrationRequest,
     RegistrationResponse,
     TokenResponse,
@@ -621,6 +622,100 @@ def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
                     )
                 ),
             ) from exc
+
+    @app.get(
+        "/projects",
+        status_code=status.HTTP_200_OK,
+        response_model=ProjectsListResponse,
+        summary="List projects",
+        response_description="List of projects matching the specified filters.",
+        tags=["Projects"],
+    )
+    def list_projects(
+        current_user: User = Depends(get_current_user),
+        project_service: ProjectService = Depends(get_project_service),
+        user_id: Optional[str] = None,
+        is_public: Optional[bool] = None,
+        mission_type: Optional[str] = None,
+    ) -> ProjectsListResponse:
+        """
+        List projects with optional filtering.
+
+        Returns projects based on the authenticated user and optional filters.
+        By default, returns the authenticated user's projects. Use filters to
+        customize the results.
+
+        **Authentication Required**: This endpoint requires a valid JWT token
+        in the Authorization header.
+
+        **Query Parameters**:
+        - `user_id` (string, optional): Filter by owner user ID. If not
+          provided, defaults to the authenticated user's ID. Users can only
+          list their own projects unless filtering for public projects.
+        - `is_public` (boolean, optional): Filter by public visibility.
+          - `true`: Only return public projects
+          - `false`: Only return private projects
+          - Not provided: Return both public and private projects
+        - `mission_type` (string, optional): Filter by mission type.
+          Valid values: `tutorial`, `free_flight`, `challenge`
+
+        **Response**:
+        Returns a list of projects matching the specified filters, along with
+        the total count.
+
+        **Error Codes**:
+        - `VALIDATION_MISSION_TYPE_INVALID`: Invalid mission type filter
+        - `AUTH_INVALID_TOKEN`: Missing or invalid authentication token
+
+        **Example Requests**:
+        ```bash
+        # List current user's projects
+        GET /projects
+
+        # List only public projects
+        GET /projects?is_public=true
+
+        # List challenge-type projects
+        GET /projects?mission_type=challenge
+
+        # List public challenge projects
+        GET /projects?is_public=true&mission_type=challenge
+        ```
+        """
+        # Validate mission_type if provided
+        if mission_type is not None:
+            if mission_type not in ("tutorial", "free_flight", "challenge"):
+                raise APIError(
+                    code=ErrorCode.VALIDATION_MISSION_TYPE_INVALID,
+                    message=f"Invalid mission type: {mission_type}. Must be one of: tutorial, free_flight, challenge",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    details={"field": "mission_type", "value": mission_type},
+                )
+
+        # If filtering for public projects without user_id, return all public projects
+        if is_public is True and user_id is None:
+            projects = project_service.list_public_projects(mission_type=mission_type)
+            target_user_id = None  # All public projects, no specific user
+        else:
+            # Default to current user's projects if user_id not specified
+            target_user_id = user_id if user_id is not None else current_user.id
+            # List user's projects with filters
+            projects = project_service.list_user_projects(
+                user_id=target_user_id,
+                mission_type=mission_type,
+                is_public=is_public,
+            )
+
+        logger.info(
+            "Listed %d projects for user %s (filters: user_id=%s, is_public=%s, mission_type=%s)",
+            len(projects),
+            current_user.id,
+            target_user_id,
+            is_public,
+            mission_type,
+        )
+
+        return ProjectsListResponse.from_projects(projects)
 
     return app
 

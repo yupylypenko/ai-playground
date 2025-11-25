@@ -379,3 +379,18 @@ class MissionResponse(BaseModel):
             fuel_consumed=mission.fuel_consumed,
             estimated_time=mission.estimated_time,
         )
+
+
+class ProjectsListResponse(BaseModel):
+    """Response contract for projects list."""
+
+    projects: list[ProjectResponse] = Field(description="List of projects.")
+    total: int = Field(description="Total number of projects matching filters.")
+
+    @classmethod
+    def from_projects(cls, projects: list[Project]) -> "ProjectsListResponse":
+        """Create response from a list of Project models."""
+        return cls(
+            projects=[ProjectResponse.from_project(p) for p in projects],
+            total=len(projects),
+        )
