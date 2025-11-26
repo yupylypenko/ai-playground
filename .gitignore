@@ -52,3 +52,6 @@ logs/
 /smoke_main_menu.png.git/hooks/pre-commit.example
 bin/
 coverage.xml
+
+# Kubernetes secrets (contains sensitive data)
+k8s/secret.yaml

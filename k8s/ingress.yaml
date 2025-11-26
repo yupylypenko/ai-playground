@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cosmic-flight-simulator-ingress
+  namespace: cosmic-flight-sim
+  labels:
+    app: cosmic-flight-simulator
+  annotations:
+    # For k3d/minikube/kind, you may need to enable ingress
+    # k3d: ingress is enabled by default
+    # minikube: minikube addons enable ingress
+    # kind: requires ingress controller installation
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: cosmic-flight-sim.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cosmic-flight-simulator-service
+            port:
+              number: 80

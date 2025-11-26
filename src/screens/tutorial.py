@@ -428,3 +428,4 @@ class TutorialScreen:
         self.current_step = 0
         self.selected_action = None
         self.hover_action = None
+

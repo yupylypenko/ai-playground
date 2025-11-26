@@ -385,3 +385,4 @@ class PauseScreen:
         """Reset pause screen state."""
         self.selected_option = None
         self.hover_option = None
+
