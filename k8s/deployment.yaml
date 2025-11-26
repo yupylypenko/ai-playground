@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cosmic-flight-simulator
+  namespace: cosmic-flight-sim
+  labels:
+    app: cosmic-flight-simulator
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cosmic-flight-simulator
+  template:
+    metadata:
+      labels:
+        app: cosmic-flight-simulator
+    spec:
+      containers:
+      - name: api
+        image: cosmic-flight-simulator:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        env:
+        # Load from ConfigMap
+        - name: MONGODB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: cosmic-flight-sim-config
+              key: MONGODB_HOST
+        - name: MONGODB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: cosmic-flight-sim-config
+              key: MONGODB_PORT
+        - name: MONGODB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: cosmic-flight-sim-config
+              key: MONGODB_DATABASE
+        - name: ACCESS_TOKEN_MIN
+          valueFrom:
+            configMapKeyRef:
+              name: cosmic-flight-sim-config
+              key: ACCESS_TOKEN_MIN
+        - name: PYTHONUNBUFFERED
+          valueFrom:
+            configMapKeyRef:
+              name: cosmic-flight-sim-config
+              key: PYTHONUNBUFFERED
+        # Load from Secret
+        - name: API_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: cosmic-flight-sim-secrets
+              key: API_SECRET_KEY
+        # Optional: MongoDB URI (if using full connection string)
+        # - name: MONGODB_URI
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: cosmic-flight-sim-secrets
+        #       key: MONGODB_URI
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /docs
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /docs
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
