@@ -8,6 +8,7 @@ from .auth import AuthService, RegistrationResult
 
 # Storage ports and configuration
 from .config import MongoConfig
+from .protection import AsteroidProtectionSystem, ProtectionMode, ProtectionStatus
 from .services import MissionService, UserService
 from .storage import (
     AuthRepository,
@@ -26,4 +27,7 @@ __all__ = [
     "MissionService",
     "AuthService",
     "RegistrationResult",
+    "AsteroidProtectionSystem",
+    "ProtectionMode",
+    "ProtectionStatus",
 ]

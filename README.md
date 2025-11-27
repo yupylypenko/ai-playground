@@ -12,6 +12,7 @@ visualization.
 - **Solar System Navigation**: Fly between planets in our solar system
 - **Multiple Spacecraft**: Choose from different ship types with unique characteristics
 - **Mission Objectives**: Complete challenges and missions
+- **Asteroid Protection**: Automatic collision avoidance and destruction
 
 ## 🎮 Controls
 
