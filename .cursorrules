@@ -4,7 +4,7 @@
 
 ## 0) Scope & Targets
 
-* Language: **Python 3.11+**
+* Language: **Python 3.12+**
 * Package layout: `src/` with packages **simulator**, **cockpit**, **visualization**
 * Build/format/lint: **Black + Ruff**, type checking **MyPy + Pyright**, tests **pytest**
 * CI: GitHub Actions (`.github/workflows/ci.yml`)

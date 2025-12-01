@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional
 
 
 @dataclass
@@ -39,8 +38,8 @@ class Objective:
     id: str
     description: str
     type: str  # "reach", "collect", "maintain", "avoid"
-    target_id: Optional[str] = None
-    position: Optional[tuple[float, float, float]] = None  # (x, y, z)
+    target_id: str | None = None
+    position: tuple[float, float, float] | None = None  # (x, y, z)
     completed: bool = False
 
     def __repr__(self) -> str:
@@ -97,20 +96,20 @@ class Mission:
     description: str
 
     # Objectives
-    objectives: List[Objective] = field(default_factory=list)
+    objectives: list[Objective] = field(default_factory=list)
     current_objective_index: int = 0
-    completion_criteria: Dict[str, any] = field(default_factory=dict)
+    completion_criteria: dict[str, any] = field(default_factory=dict)
 
     # Constraints & Setup
     start_position: tuple[float, float, float] = (0.0, 0.0, 0.0)  # (x, y, z)
-    target_body_id: Optional[str] = None
+    target_body_id: str | None = None
     max_fuel: float = 1000.0  # L
-    time_limit: Optional[float] = None  # seconds
-    allowed_ship_types: List[str] = field(default_factory=list)
-    failure_conditions: List[str] = field(default_factory=list)
+    time_limit: float | None = None  # seconds
+    allowed_ship_types: list[str] = field(default_factory=list)
+    failure_conditions: list[str] = field(default_factory=list)
 
     # Tracking
-    start_time: Optional[float] = None
+    start_time: float | None = None
     elapsed_time: float = 0.0
     distance_traveled: float = 0.0
     fuel_consumed: float = 0.0
@@ -147,7 +146,7 @@ class Mission:
         """
         return all(obj.completed for obj in self.objectives)
 
-    def get_current_objective(self) -> Optional[Objective]:
+    def get_current_objective(self) -> Objective | None:
         """
         Get the currently active objective.
 
@@ -232,17 +231,17 @@ class User:
     missions_attempted: int = 0
     distance_traveled: float = 0.0  # km
     fuel_consumed: float = 0.0  # L
-    ship_types_used: List[str] = field(default_factory=list)
+    ship_types_used: list[str] = field(default_factory=list)
 
     # Progression
-    unlocked_ships: List[str] = field(default_factory=list)
-    completed_missions: List[str] = field(default_factory=list)
-    best_times: Dict[str, float] = field(default_factory=dict)
-    achievements: List[str] = field(default_factory=list)
+    unlocked_ships: list[str] = field(default_factory=list)
+    completed_missions: list[str] = field(default_factory=list)
+    best_times: dict[str, float] = field(default_factory=dict)
+    achievements: list[str] = field(default_factory=list)
 
     # Metadata
     created_at: datetime = field(default_factory=datetime.now)
-    last_login: Optional[datetime] = None
+    last_login: datetime | None = None
 
     def update_statistics(
         self, flight_time: float, distance: float, fuel: float, ship_type: str
@@ -366,15 +365,15 @@ class Project:
     difficulty: str  # "beginner", "intermediate", "advanced"
 
     # Mission configuration
-    target_body_id: Optional[str] = None
+    target_body_id: str | None = None
     start_position: tuple[float, float, float] = (0.0, 0.0, 0.0)  # (x, y, z)
     max_fuel: float = 1000.0  # L
-    time_limit: Optional[float] = None  # seconds
-    allowed_ship_types: List[str] = field(default_factory=list)
-    failure_conditions: List[str] = field(default_factory=list)
+    time_limit: float | None = None  # seconds
+    allowed_ship_types: list[str] = field(default_factory=list)
+    failure_conditions: list[str] = field(default_factory=list)
 
     # Objective templates (stored as dictionaries for flexibility)
-    objectives: List[Dict[str, any]] = field(default_factory=list)
+    objectives: list[dict[str, any]] = field(default_factory=list)
 
     # Visibility
     is_public: bool = False
@@ -387,8 +386,8 @@ class Project:
         self,
         description: str,
         obj_type: str = "reach",
-        target_id: Optional[str] = None,
-        position: Optional[tuple[float, float, float]] = None,
+        target_id: str | None = None,
+        position: tuple[float, float, float] | None = None,
     ) -> None:
         """
         Add an objective template to the project.
@@ -409,7 +408,7 @@ class Project:
         self.updated_at = datetime.now()
 
     def update_metadata(
-        self, name: Optional[str] = None, description: Optional[str] = None
+        self, name: str | None = None, description: str | None = None
     ) -> None:
         """
         Update project metadata.

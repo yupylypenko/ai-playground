@@ -6,8 +6,6 @@ Services that coordinate domain logic with storage repositories.
 
 from __future__ import annotations
 
-from typing import List, Optional
-
 from src.cockpit.storage import MissionRepository, ProjectRepository, UserRepository
 from src.models import Mission, Objective, Project, User
 
@@ -33,7 +31,7 @@ class UserService:
         username: str,
         email: str,
         display_name: str,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ) -> User:
         """
         Create a new user.
@@ -69,7 +67,7 @@ class UserService:
         self.user_repository.save_user(user)
         return user
 
-    def get_user(self, user_id: str) -> Optional[User]:
+    def get_user(self, user_id: str) -> User | None:
         """
         Get user by ID.
 
@@ -113,14 +111,14 @@ class MissionService:
         mission_type: str,
         difficulty: str,
         description: str,
-        mission_id: Optional[str] = None,
-        target_body_id: Optional[str] = None,
+        mission_id: str | None = None,
+        target_body_id: str | None = None,
         start_position: tuple[float, float, float] = (0.0, 0.0, 0.0),
         max_fuel: float = 1000.0,
-        time_limit: Optional[float] = None,
-        allowed_ship_types: Optional[List[str]] = None,
-        failure_conditions: Optional[List[str]] = None,
-        objectives: Optional[List[Objective]] = None,
+        time_limit: float | None = None,
+        allowed_ship_types: list[str] | None = None,
+        failure_conditions: list[str] | None = None,
+        objectives: list[Objective] | None = None,
     ) -> Mission:
         """
         Create a new mission.
@@ -185,8 +183,8 @@ class MissionService:
     def create_mission_from_project(
         self,
         project: Project,
-        mission_id: Optional[str] = None,
-        name_override: Optional[str] = None,
+        mission_id: str | None = None,
+        name_override: str | None = None,
     ) -> Mission:
         """
         Create a mission from a project template.
@@ -234,7 +232,7 @@ class MissionService:
             objectives=objectives,
         )
 
-    def get_mission(self, mission_id: str) -> Optional[Mission]:
+    def get_mission(self, mission_id: str) -> Mission | None:
         """
         Get mission by ID.
 
@@ -247,8 +245,8 @@ class MissionService:
         return self.mission_repository.get_mission(mission_id)
 
     def list_user_missions(
-        self, user_id: str, status: Optional[str] = None
-    ) -> List[Mission]:
+        self, user_id: str, status: str | None = None
+    ) -> list[Mission]:
         """
         List missions for a user.
 
@@ -296,13 +294,13 @@ class ProjectService:
         description: str,
         mission_type: str,
         difficulty: str,
-        project_id: Optional[str] = None,
-        target_body_id: Optional[str] = None,
+        project_id: str | None = None,
+        target_body_id: str | None = None,
         start_position: tuple[float, float, float] = (0.0, 0.0, 0.0),
         max_fuel: float = 1000.0,
-        time_limit: Optional[float] = None,
-        allowed_ship_types: Optional[List[str]] = None,
-        failure_conditions: Optional[List[str]] = None,
+        time_limit: float | None = None,
+        allowed_ship_types: list[str] | None = None,
+        failure_conditions: list[str] | None = None,
         is_public: bool = False,
     ) -> Project:
         """
@@ -367,7 +365,7 @@ class ProjectService:
         self.project_repository.save_project(project)
         return project
 
-    def get_project(self, project_id: str) -> Optional[Project]:
+    def get_project(self, project_id: str) -> Project | None:
         """
         Get project by ID.
 
@@ -382,9 +380,9 @@ class ProjectService:
     def list_user_projects(
         self,
         user_id: str,
-        mission_type: Optional[str] = None,
-        is_public: Optional[bool] = None,
-    ) -> List[Project]:
+        mission_type: str | None = None,
+        is_public: bool | None = None,
+    ) -> list[Project]:
         """
         List projects for a user.
 
@@ -400,7 +398,7 @@ class ProjectService:
             user_id=user_id, mission_type=mission_type, is_public=is_public
         )
 
-    def list_public_projects(self, mission_type: Optional[str] = None) -> List[Project]:
+    def list_public_projects(self, mission_type: str | None = None) -> list[Project]:
         """
         List publicly available projects.
 
