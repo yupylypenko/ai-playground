@@ -6,15 +6,23 @@ Tests non-obvious edge cases that could lead to bugs or unexpected behavior.
 
 from __future__ import annotations
 
+import math
+import uuid
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 
 from src.api.app import create_app
+from src.cockpit.memory import (
+    InMemoryAuthRepository,
+    InMemoryMissionRepository,
+    InMemoryProjectRepository,
+    InMemoryUserRepository,
+)
 from src.cockpit.auth import AuthService
-from src.cockpit.memory import InMemoryAuthRepository, InMemoryUserRepository
-from src.cockpit.services import UserService
+from src.cockpit.services import MissionService, ProjectService, UserService
+from src.models import Project, User
 
 
 @pytest.fixture
@@ -92,10 +100,7 @@ class TestEdgeCase1_EmptyProjectObjectives:
     """Edge Case 1: Project template with empty objectives."""
 
     def test_create_mission_from_project_with_empty_objectives(
-        self,
-        test_client: TestClient,
-        test_user: tuple[str, str],
-        test_project: dict[str, Any],
+        self, test_client: TestClient, test_user: tuple[str, str], test_project: dict[str, Any]
     ) -> None:
         """Test creating mission from project with empty objectives array."""
         _, token = test_user
@@ -121,10 +126,7 @@ class TestEdgeCase2_ConflictingFields:
     """Edge Case 2: project_id + objectives provided together."""
 
     def test_create_mission_with_project_id_and_objectives_conflict(
-        self,
-        test_client: TestClient,
-        test_user: tuple[str, str],
-        test_project: dict[str, Any],
+        self, test_client: TestClient, test_user: tuple[str, str], test_project: dict[str, Any]
     ) -> None:
         """Test that objectives are ignored when project_id is provided."""
         _, token = test_user
@@ -454,3 +456,4 @@ class TestEdgeCase_AdditionalBoundaryTests:
             },
         )
         assert response.status_code == 422  # Should reject negative values
+

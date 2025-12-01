@@ -560,6 +560,15 @@ def create_app(auth_service: AuthService | None = None) -> FastAPI:
                         details={"field": "project_id", "value": payload.project_id},
                     )
 
+                # Check access control: private projects can only be used by owner
+                if not project.is_public and project.user_id != current_user.id:
+                    raise APIError(
+                        code=ErrorCode.RESOURCE_NOT_FOUND,
+                        message=f"Project template '{payload.project_id}' not found",
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        details={"field": "project_id", "value": payload.project_id},
+                    )
+
                 # Create mission from project template
                 mission = mission_service.create_mission_from_project(
                     project=project,
