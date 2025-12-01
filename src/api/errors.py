@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError
@@ -53,7 +53,7 @@ class ErrorDetail(BaseModel):
 
     code: ErrorCode = Field(description="Machine-readable error code")
     message: str = Field(description="Human-readable error message")
-    details: Optional[dict[str, Any]] = Field(
+    details: dict[str, Any] | None = Field(
         default=None, description="Additional error context"
     )
     timestamp: str = Field(description="ISO 8601 timestamp of the error")
@@ -82,7 +82,7 @@ class APIError(Exception):
         code: ErrorCode,
         message: str,
         status_code: int = status.HTTP_400_BAD_REQUEST,
-        details: Optional[dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         self.code = code
         self.message = message
@@ -108,7 +108,7 @@ def create_error_response(
     code: ErrorCode,
     message: str,
     status_code: int,
-    details: Optional[dict[str, Any]] = None,
+    details: dict[str, Any] | None = None,
 ) -> JSONResponse:
     """
     Create a standardized error response.

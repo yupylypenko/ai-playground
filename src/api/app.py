@@ -11,7 +11,6 @@ from __future__ import annotations
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 from fastapi import Depends, FastAPI, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -68,8 +67,8 @@ def _build_in_memory_auth_service() -> AuthService:
 
 
 # Shared repository instances for dependency injection
-_shared_project_repo: Optional[InMemoryProjectRepository] = None
-_shared_mission_repo: Optional[InMemoryMissionRepository] = None
+_shared_project_repo: InMemoryProjectRepository | None = None
+_shared_mission_repo: InMemoryMissionRepository | None = None
 
 
 def _get_shared_project_repo() -> InMemoryProjectRepository:
@@ -98,7 +97,7 @@ def _build_in_memory_mission_service() -> MissionService:
     return MissionService(mission_repository=_get_shared_mission_repo())
 
 
-def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
+def create_app(auth_service: AuthService | None = None) -> FastAPI:
     """
     Build a FastAPI application.
 
@@ -634,9 +633,9 @@ def create_app(auth_service: Optional[AuthService] = None) -> FastAPI:
     def list_projects(
         current_user: User = Depends(get_current_user),
         project_service: ProjectService = Depends(get_project_service),
-        user_id: Optional[str] = None,
-        is_public: Optional[bool] = None,
-        mission_type: Optional[str] = None,
+        user_id: str | None = None,
+        is_public: bool | None = None,
+        mission_type: str | None = None,
     ) -> ProjectsListResponse:
         """
         List projects with optional filtering.

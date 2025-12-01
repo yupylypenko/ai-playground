@@ -7,7 +7,6 @@ Defines planets, moons, and other celestial bodies for navigation.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from .types import Vector3D
 
@@ -67,7 +66,7 @@ class CelestialBody:
     has_water: bool
 
     # Orbital Mechanics
-    parent_id: Optional[str] = None  # None for Sun
+    parent_id: str | None = None  # None for Sun
     semi_major_axis: float = 0.0  # meters
     eccentricity: float = 0.0  # 0-1
     inclination: float = 0.0  # radians
@@ -148,7 +147,7 @@ class SolarSystem:
     def __init__(self) -> None:
         """Initialize empty solar system."""
         self.bodies: dict[str, CelestialBody] = {}
-        self.sun: Optional[CelestialBody] = None
+        self.sun: CelestialBody | None = None
         self._initialize_system()
 
     def _initialize_system(self) -> None:
@@ -179,7 +178,7 @@ class SolarSystem:
         """
         self.bodies[body.id] = body
 
-    def get_body(self, body_id: str) -> Optional[CelestialBody]:
+    def get_body(self, body_id: str) -> CelestialBody | None:
         """
         Get a celestial body by ID.
 
@@ -191,7 +190,7 @@ class SolarSystem:
         """
         return self.bodies.get(body_id)
 
-    def get_nearest_body(self, position: Vector3D) -> Optional[CelestialBody]:
+    def get_nearest_body(self, position: Vector3D) -> CelestialBody | None:
         """
         Find the nearest celestial body to a position.
 

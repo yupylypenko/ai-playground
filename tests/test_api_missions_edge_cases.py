@@ -12,8 +12,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.api.app import create_app
+from src.cockpit.auth import AuthService
 from src.cockpit.memory import InMemoryAuthRepository, InMemoryUserRepository
-from src.cockpit.services import AuthService, UserService
+from src.cockpit.services import UserService
 
 
 @pytest.fixture
