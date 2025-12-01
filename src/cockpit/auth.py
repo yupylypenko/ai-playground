@@ -142,10 +142,22 @@ class AuthService:
 
         Returns:
             The associated User if credentials are valid; otherwise None.
+
+        Security Note:
+            Always performs password verification, even for non-existent users,
+            to prevent timing attacks that could enumerate valid usernames.
         """
         profile = self.auth_repository.get_by_username(username.strip())
+
+        # Always perform password verification to prevent timing attacks
+        # Use dummy hash if user doesn't exist to maintain constant time
         if not profile:
+            # Perform dummy password hash computation to maintain constant time
+            # This prevents attackers from using timing differences to enumerate usernames
+            dummy_salt = secrets.token_hex(16)
+            self._hash_password(password, dummy_salt)
             return None
+
         if not self.verify_password(password, profile):
             return None
         user = self.user_service.get_user(profile.user_id)
