@@ -394,3 +394,104 @@ class ProjectsListResponse(BaseModel):
             projects=[ProjectResponse.from_project(p) for p in projects],
             total=len(projects),
         )
+
+
+class ObjectSearchRequest(BaseModel):
+    """Request payload for searching objects."""
+
+    query: str | None = Field(
+        default=None,
+        description="Text search query (searches name, description, etc.).",
+        examples=["mars"],
+    )
+    object_type: str | None = Field(
+        default=None,
+        description="Filter by type: star, planet, moon, asteroid.",
+        examples=["planet"],
+    )
+    min_mass: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Minimum mass in kg.",
+        examples=[1e23],
+    )
+    max_mass: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Maximum mass in kg.",
+        examples=[1e25],
+    )
+    has_atmosphere: bool | None = Field(
+        default=None,
+        description="Filter by atmosphere presence.",
+    )
+    limit: int = Field(
+        default=100,
+        ge=1,
+        le=1000,
+        description="Maximum number of results.",
+    )
+
+
+class ObjectMetadataResponse(BaseModel):
+    """Response contract for object metadata."""
+
+    object_id: str = Field(description="Unique object identifier.")
+    name: str = Field(description="Object name.")
+    type: str = Field(description="Object type.")
+    description: str | None = Field(default=None, description="Object description.")
+    mass: float | None = Field(default=None, description="Mass in kg.")
+    radius: float | None = Field(default=None, description="Radius in meters.")
+    temperature: float | None = Field(default=None, description="Temperature in Kelvin.")
+    has_atmosphere: bool | None = Field(default=None, description="Has atmosphere.")
+    has_water: bool | None = Field(default=None, description="Has water.")
+    distance_from_sun: float | None = Field(
+        default=None, description="Distance from sun in meters."
+    )
+    live_data: dict[str, Any] | None = Field(
+        default=None, description="Live position and velocity data."
+    )
+    calculated_properties: dict[str, Any] | None = Field(
+        default=None, description="Calculated physical properties."
+    )
+    external_data: dict[str, Any] | None = Field(
+        default=None, description="External API enrichment data."
+    )
+
+
+class ObjectSearchResponse(BaseModel):
+    """Response contract for object search results."""
+
+    objects: list[ObjectMetadataResponse] = Field(description="List of matching objects.")
+    total: int = Field(description="Total number of matching objects.")
+
+
+class ObjectComparisonResponse(BaseModel):
+    """Response contract for object comparison."""
+
+    object_1: dict[str, Any] = Field(description="First object summary.")
+    object_2: dict[str, Any] = Field(description="Second object summary.")
+    comparison: dict[str, Any] = Field(description="Comparison metrics.")
+
+
+class NearbyObjectsRequest(BaseModel):
+    """Request payload for detecting nearby objects."""
+
+    position: tuple[float, float, float] = Field(
+        description="Position (x, y, z) in meters.",
+        examples=[(0.0, 0.0, 0.0)],
+    )
+    max_distance: float = Field(
+        default=1e12,
+        ge=0.0,
+        description="Maximum distance in meters to consider.",
+        examples=[1e12],
+    )
+
+
+class NearbyObjectsResponse(BaseModel):
+    """Response contract for nearby objects detection."""
+
+    objects: list[ObjectMetadataResponse] = Field(description="List of nearby objects.")
+    position: tuple[float, float, float] = Field(description="Search position.")
+    max_distance: float = Field(description="Maximum search distance.")

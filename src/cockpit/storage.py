@@ -292,3 +292,77 @@ class ProjectRepository(Protocol):
             project_id: Unique project identifier
         """
         ...
+
+
+class ObjectMetadataRepository(Protocol):
+    """
+    Protocol for object metadata storage operations.
+
+    Defines the interface for persisting and retrieving metadata about
+    celestial objects (planets, asteroids, etc.) for search and enrichment.
+    """
+
+    def save_metadata(self, object_id: str, metadata: dict) -> None:
+        """
+        Save or update metadata for an object.
+
+        Args:
+            object_id: Unique object identifier (e.g., "earth", "mars")
+            metadata: Dictionary of metadata fields
+        """
+        ...
+
+    def get_metadata(self, object_id: str) -> Optional[dict]:
+        """
+        Retrieve metadata for an object by ID.
+
+        Args:
+            object_id: Unique object identifier
+
+        Returns:
+            Metadata dictionary or None if not found
+        """
+        ...
+
+    def search_metadata(
+        self,
+        query: Optional[str] = None,
+        object_type: Optional[str] = None,
+        min_mass: Optional[float] = None,
+        max_mass: Optional[float] = None,
+        has_atmosphere: Optional[bool] = None,
+        limit: int = 100,
+    ) -> List[dict]:
+        """
+        Search for objects by metadata criteria.
+
+        Args:
+            query: Text search query (searches name, description, etc.)
+            object_type: Filter by type ("star", "planet", "moon", "asteroid")
+            min_mass: Minimum mass in kg
+            max_mass: Maximum mass in kg
+            has_atmosphere: Filter by atmosphere presence
+            limit: Maximum number of results
+
+        Returns:
+            List of matching metadata dictionaries
+        """
+        ...
+
+    def list_all_metadata(self) -> List[dict]:
+        """
+        List all stored metadata.
+
+        Returns:
+            List of all metadata dictionaries
+        """
+        ...
+
+    def delete_metadata(self, object_id: str) -> None:
+        """
+        Delete metadata for an object.
+
+        Args:
+            object_id: Unique object identifier
+        """
+        ...

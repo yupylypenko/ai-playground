@@ -29,6 +29,12 @@ from src.api.schemas import (
     LoginRequest,
     MissionCreateRequest,
     MissionResponse,
+    NearbyObjectsRequest,
+    NearbyObjectsResponse,
+    ObjectComparisonResponse,
+    ObjectMetadataResponse,
+    ObjectSearchRequest,
+    ObjectSearchResponse,
     ProjectCreateRequest,
     ProjectResponse,
     ProjectsListResponse,
@@ -41,9 +47,11 @@ from src.cockpit.auth import AuthService, RegistrationError
 from src.cockpit.memory import (
     InMemoryAuthRepository,
     InMemoryMissionRepository,
+    InMemoryObjectMetadataRepository,
     InMemoryProjectRepository,
     InMemoryUserRepository,
 )
+from src.cockpit.search import ObjectSearchService
 from src.cockpit.services import MissionService, ProjectService, UserService
 from src.models import Objective, User
 
@@ -69,6 +77,7 @@ def _build_in_memory_auth_service() -> AuthService:
 # Shared repository instances for dependency injection
 _shared_project_repo: InMemoryProjectRepository | None = None
 _shared_mission_repo: InMemoryMissionRepository | None = None
+_shared_metadata_repo: InMemoryObjectMetadataRepository | None = None
 
 
 def _get_shared_project_repo() -> InMemoryProjectRepository:
@@ -95,6 +104,19 @@ def _build_in_memory_project_service() -> ProjectService:
 def _build_in_memory_mission_service() -> MissionService:
     """Create a MissionService backed by in-memory repository."""
     return MissionService(mission_repository=_get_shared_mission_repo())
+
+
+def _get_shared_metadata_repo() -> InMemoryObjectMetadataRepository:
+    """Get or create shared object metadata repository instance."""
+    global _shared_metadata_repo
+    if _shared_metadata_repo is None:
+        _shared_metadata_repo = InMemoryObjectMetadataRepository()
+    return _shared_metadata_repo
+
+
+def _build_in_memory_search_service() -> ObjectSearchService:
+    """Create an ObjectSearchService backed by in-memory repository."""
+    return ObjectSearchService(metadata_repository=_get_shared_metadata_repo())
 
 
 def create_app(auth_service: AuthService | None = None) -> FastAPI:
@@ -131,6 +153,10 @@ def create_app(auth_service: AuthService | None = None) -> FastAPI:
     def get_mission_service() -> MissionService:
         """Get MissionService instance."""
         return _build_in_memory_mission_service()
+
+    def get_search_service() -> ObjectSearchService:
+        """Get ObjectSearchService instance."""
+        return _build_in_memory_search_service()
 
     def get_project_service_for_mission() -> ProjectService:
         """Get ProjectService instance for mission creation from projects."""
@@ -724,6 +750,297 @@ def create_app(auth_service: AuthService | None = None) -> FastAPI:
         )
 
         return ProjectsListResponse.from_projects(projects)
+
+    @app.post(
+        "/objects/search",
+        status_code=status.HTTP_200_OK,
+        response_model=ObjectSearchResponse,
+        summary="Search for celestial objects",
+        response_description="List of objects matching search criteria.",
+        tags=["Objects"],
+    )
+    def search_objects(
+        payload: ObjectSearchRequest,
+        search_service: ObjectSearchService = Depends(get_search_service),
+    ) -> ObjectSearchResponse:
+        """
+        Search for celestial objects by metadata criteria.
+
+        Allows searching for planets, stars, moons, and asteroids by various
+        properties such as name, type, mass, and atmospheric conditions.
+
+        **Request Body**:
+        - `query`: Text search query (searches name, description, etc.)
+        - `object_type`: Filter by type ("star", "planet", "moon", "asteroid")
+        - `min_mass`: Minimum mass in kg
+        - `max_mass`: Maximum mass in kg
+        - `has_atmosphere`: Filter by atmosphere presence
+        - `limit`: Maximum number of results (1-1000, default: 100)
+
+        **Response**:
+        Returns a list of matching objects with their metadata.
+
+        **Example Request**:
+        ```json
+        {
+          "query": "mars",
+          "object_type": "planet",
+          "has_atmosphere": true,
+          "limit": 10
+        }
+        ```
+        """
+        results = search_service.search_objects(
+            query=payload.query,
+            object_type=payload.object_type,
+            min_mass=payload.min_mass,
+            max_mass=payload.max_mass,
+            has_atmosphere=payload.has_atmosphere,
+            limit=payload.limit,
+        )
+
+        objects = [
+            ObjectMetadataResponse(
+                object_id=obj.get("object_id", ""),
+                name=obj.get("name", ""),
+                type=obj.get("type", ""),
+                description=obj.get("description"),
+                mass=obj.get("mass"),
+                radius=obj.get("radius"),
+                temperature=obj.get("temperature"),
+                has_atmosphere=obj.get("has_atmosphere"),
+                has_water=obj.get("has_water"),
+                distance_from_sun=obj.get("distance_from_sun"),
+                live_data=obj.get("live_data"),
+                calculated_properties=obj.get("calculated_properties"),
+                external_data=obj.get("external_data"),
+            )
+            for obj in results
+        ]
+
+        return ObjectSearchResponse(objects=objects, total=len(objects))
+
+    @app.get(
+        "/objects/{object_id}",
+        status_code=status.HTTP_200_OK,
+        response_model=ObjectMetadataResponse,
+        summary="Get object details",
+        response_description="Detailed metadata for the specified object.",
+        tags=["Objects"],
+    )
+    def get_object_details(
+        object_id: str,
+        search_service: ObjectSearchService = Depends(get_search_service),
+    ) -> ObjectMetadataResponse:
+        """
+        Get detailed metadata for a specific celestial object.
+
+        Returns comprehensive information about the object including physical
+        properties, orbital data, and live position/velocity if available.
+
+        **Path Parameters**:
+        - `object_id`: Unique object identifier (e.g., "earth", "mars", "sun")
+
+        **Response**:
+        Returns detailed object metadata with live data if available.
+
+        **Error Codes**:
+        - `RESOURCE_NOT_FOUND`: Object not found
+        """
+        metadata = search_service.get_object_details(object_id)
+        if not metadata:
+            raise APIError(
+                code=ErrorCode.RESOURCE_NOT_FOUND,
+                message=f"Object '{object_id}' not found",
+                status_code=status.HTTP_404_NOT_FOUND,
+                details={"field": "object_id", "value": object_id},
+            )
+
+        return ObjectMetadataResponse(
+            object_id=metadata.get("object_id", object_id),
+            name=metadata.get("name", ""),
+            type=metadata.get("type", ""),
+            description=metadata.get("description"),
+            mass=metadata.get("mass"),
+            radius=metadata.get("radius"),
+            temperature=metadata.get("temperature"),
+            has_atmosphere=metadata.get("has_atmosphere"),
+            has_water=metadata.get("has_water"),
+            distance_from_sun=metadata.get("distance_from_sun"),
+            live_data=metadata.get("live_data"),
+            calculated_properties=metadata.get("calculated_properties"),
+            external_data=metadata.get("external_data"),
+        )
+
+    @app.get(
+        "/objects/{object_id_1}/compare/{object_id_2}",
+        status_code=status.HTTP_200_OK,
+        response_model=ObjectComparisonResponse,
+        summary="Compare two objects",
+        response_description="Comparison metrics between two objects.",
+        tags=["Objects"],
+    )
+    def compare_objects(
+        object_id_1: str,
+        object_id_2: str,
+        search_service: ObjectSearchService = Depends(get_search_service),
+    ) -> ObjectComparisonResponse:
+        """
+        Compare two celestial objects and return comparison metrics.
+
+        Provides side-by-side comparison of physical properties, ratios,
+        and differences between two objects.
+
+        **Path Parameters**:
+        - `object_id_1`: First object identifier
+        - `object_id_2`: Second object identifier
+
+        **Response**:
+        Returns comparison metrics including mass ratios, temperature
+        differences, and shared characteristics.
+
+        **Error Codes**:
+        - `RESOURCE_NOT_FOUND`: One or both objects not found
+        """
+        comparison = search_service.compare_objects(object_id_1, object_id_2)
+        if not comparison:
+            raise APIError(
+                code=ErrorCode.RESOURCE_NOT_FOUND,
+                message=f"One or both objects not found: '{object_id_1}', '{object_id_2}'",
+                status_code=status.HTTP_404_NOT_FOUND,
+                details={
+                    "object_id_1": object_id_1,
+                    "object_id_2": object_id_2,
+                },
+            )
+
+        return ObjectComparisonResponse(
+            object_1=comparison["object_1"],
+            object_2=comparison["object_2"],
+            comparison=comparison["comparison"],
+        )
+
+    @app.post(
+        "/objects/{object_id}/enrich",
+        status_code=status.HTTP_200_OK,
+        response_model=ObjectMetadataResponse,
+        summary="Enrich object metadata",
+        response_description="Enriched object metadata with additional data.",
+        tags=["Objects"],
+    )
+    def enrich_object_metadata(
+        object_id: str,
+        use_external_api: bool = False,
+        search_service: ObjectSearchService = Depends(get_search_service),
+    ) -> ObjectMetadataResponse:
+        """
+        Enrich object metadata with additional information.
+
+        Enhances object metadata with calculated properties and optionally
+        fetches additional data from external APIs (e.g., NASA).
+
+        **Path Parameters**:
+        - `object_id`: Unique object identifier
+
+        **Query Parameters**:
+        - `use_external_api`: Whether to fetch from external API (default: false)
+
+        **Response**:
+        Returns enriched metadata with calculated properties and optional
+        external data.
+
+        **Error Codes**:
+        - `RESOURCE_NOT_FOUND`: Object not found
+        """
+        enriched = search_service.enrich_object_metadata(
+            object_id, use_external_api=use_external_api
+        )
+        if not enriched:
+            raise APIError(
+                code=ErrorCode.RESOURCE_NOT_FOUND,
+                message=f"Object '{object_id}' not found",
+                status_code=status.HTTP_404_NOT_FOUND,
+                details={"field": "object_id", "value": object_id},
+            )
+
+        return ObjectMetadataResponse(
+            object_id=enriched.get("object_id", object_id),
+            name=enriched.get("name", ""),
+            type=enriched.get("type", ""),
+            description=enriched.get("description"),
+            mass=enriched.get("mass"),
+            radius=enriched.get("radius"),
+            temperature=enriched.get("temperature"),
+            has_atmosphere=enriched.get("has_atmosphere"),
+            has_water=enriched.get("has_water"),
+            distance_from_sun=enriched.get("distance_from_sun"),
+            live_data=enriched.get("live_data"),
+            calculated_properties=enriched.get("calculated_properties"),
+            external_data=enriched.get("external_data"),
+        )
+
+    @app.post(
+        "/objects/nearby",
+        status_code=status.HTTP_200_OK,
+        response_model=NearbyObjectsResponse,
+        summary="Detect nearby objects",
+        response_description="List of objects near the specified position.",
+        tags=["Objects"],
+    )
+    def detect_nearby_objects(
+        payload: NearbyObjectsRequest,
+        search_service: ObjectSearchService = Depends(get_search_service),
+    ) -> NearbyObjectsResponse:
+        """
+        Detect celestial objects near a given position.
+
+        Finds all objects within a specified distance of a position in 3D space.
+        Useful for navigation and proximity detection during flight.
+
+        **Request Body**:
+        - `position`: Position (x, y, z) in meters
+        - `max_distance`: Maximum distance in meters to consider (default: 1e12)
+
+        **Response**:
+        Returns a list of nearby objects sorted by distance, with distance
+        information included.
+
+        **Example Request**:
+        ```json
+        {
+          "position": [1.496e11, 0.0, 0.0],
+          "max_distance": 1e12
+        }
+        ```
+        """
+        nearby = search_service.detect_nearby_objects(
+            payload.position, max_distance=payload.max_distance
+        )
+
+        objects = [
+            ObjectMetadataResponse(
+                object_id=obj.get("object_id", ""),
+                name=obj.get("name", ""),
+                type=obj.get("type", ""),
+                description=obj.get("description"),
+                mass=obj.get("mass"),
+                radius=obj.get("radius"),
+                temperature=obj.get("temperature"),
+                has_atmosphere=obj.get("has_atmosphere"),
+                has_water=obj.get("has_water"),
+                distance_from_sun=obj.get("distance_from_sun"),
+                live_data=obj.get("live_data") or obj.get("position"),
+                calculated_properties=obj.get("calculated_properties"),
+                external_data=obj.get("external_data"),
+            )
+            for obj in nearby
+        ]
+
+        return NearbyObjectsResponse(
+            objects=objects,
+            position=payload.position,
+            max_distance=payload.max_distance,
+        )
 
     return app
 
